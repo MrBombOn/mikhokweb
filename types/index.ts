@@ -1,3 +1,5 @@
+/** Shared UI and domain types used across modules. */
+
 export type Lang = 'hu' | 'en';
 export type Theme = 'light' | 'dark';
 export type ToastItem = { id: number; text: string; type: 'success' | 'info' | 'warning' };

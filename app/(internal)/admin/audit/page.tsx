@@ -1,3 +1,4 @@
+/** @file Admin – audit `/admin/audit` */
 import { Card, SectionHeader } from '@/components/ui/Core';
 export default function AdminAuditPage() {
   return (

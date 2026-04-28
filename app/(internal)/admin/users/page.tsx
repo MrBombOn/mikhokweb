@@ -1,3 +1,4 @@
+/** @file Admin – felhasználók `/admin/users` */
 import { Card, SectionHeader } from '@/components/ui/Core';
 export default function AdminUsersPage() {
   return (

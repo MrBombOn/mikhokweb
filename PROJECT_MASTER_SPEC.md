@@ -790,6 +790,16 @@ A rendszer ajánlott megvalósítási sorrendje:
 18. Biztonsági audit.
 19. Mobil és a11y audit.
 20. Tesztelés és polish.
+21. Tartalmi és API SSOT: landing és modulok teljes szinkronja (lásd §29.1).
+22. Feature-first refaktor és domain réteg tisztítása (lásd §29.2).
+23. Observability, teljesítmény és üzemeltetés (lásd §29.3).
+24. SEO, megosztás és hivatalos kommunikáció (lásd §29.4).
+25. Hallgatói élmény: keresés, személyre szabás, visszajelzés (lásd §29.5).
+26. Integrációk és automatizáció (lásd §29.6).
+27. Minőség, tesztek és folyamatos karbantartás (lásd §29.7).
+28. Szezonális, kikapcsolható ünnepi hangulat (díszítő réteg, HU naptár; lásd §29.9).
+
+A **21–28. pontok** jelenleg **javasolt továbbfázisok**: részletes leírásuk a §29-ben található (a 28. pont: §29.9). Prioritás, ütemezés és scope egyeztetés után beemelhetők a kötelező sorrendbe, vagy módosíthatók / elvethetők.
 
 Minden pont csak akkor tekinthető lezárhatónak, ha az elfogadási feltételek teljesülnek, a dokumentáció frissült, és a következő lépés egyértelműen rögzítésre került.
 
@@ -838,3 +848,241 @@ A rendszer akkor tekinthető késznek, ha:
 ## 28. Záró elv
 
 Ez a dokumentum a projekt központi master specifikációja. Minden további roadmap, handoff, implementációs döntés és fejlesztési blokk ennek szellemében értelmezendő. A cél egy olyan rendszer létrehozása, amely nemcsak működik, hanem hosszú távon is tisztán karbantartható, dokumentált, bővíthető és átadható marad.
+
+A **§25** alap fejlesztési sorrenden túli, előre vetített lépések a **§29** fejezetben kaptak helyet; azok csak a fejezet elején leírt egyeztetés után válnak kötelező iránnyá.
+
+---
+
+## 29. További, javasolt fejlesztési fázisok (átgondolandó)
+
+Ez a fejezet a **§25 fejlesztési sorrend 21–27. pontjainak** részletes kibontása (**§29.1–§29.7**), a **28.** pont kibontása (**§29.9**), valamint a **§29.8** ötletbank. Célja, hogy a specifikációval összhangban lévő, előre gondolható fejlesztési irányok dokumentáltan rendelkezésre álljanak; a tételek **nem minősülnek automatikusan elfogadott követelménynek**, amíg a projekt szereplői nem erősítik meg őket (§24.2, `docs/decision-log.md`).
+
+### 29.1 Fázis 21 – Tartalmi és API SSOT: landing, modulok, egy adatforrás
+
+**Kontextus:** A master spec szerint a route-komponensek csak kompozíciót végeznek, a hírek és egyéb modulok pedig referencia-minőségű tartalmi motort képviselnek. A landing és a dedikált moduloldalak között el kell kerülni a párhuzamos, eltérő adat- vagy üzleti logikát.
+
+**Cél:** Egyetlen, dokumentált adatút minden nyilvános tartalommodulhoz (hír, esemény, galéria, útmutató, office kiemelések): ugyanaz a service / API szerződés a főoldalon és a modul route-okon; a kliens cache és invalidáció szabályai egy helyen (SSOT).
+
+**Tartalom (javasolt feladatok):**
+
+- Hírek: landing lista és `/news` (és esetleges archív) ugyanabból a `GET` szerződésből, közös mapper és validáció; ütemezett és piszkozat állapotok viselkedésének szinkronja a §10 szerint.
+- Naptár, galéria, guides: hasonló minta – nincs „csak landingre” hardcodeolt demo-adat éles útvonalon; fallback csak fejlesztői vagy feature flag mögött.
+- Központi „content fetch” réteg (pl. `lib/` vagy `features/*/service`) + rövid `docs/api.md` frissítés minden változásnál.
+
+**Elfogadási feltételek (javasolt):**
+
+- Nincs olyan production útvonal, ahol ugyanannak a tartalomtípusnak két eltérő forrása él párhuzamosan felhasználói művelet nélkül.
+- A §2.1 SSOT és a §2.3 route-szabály betartása code review checklistben szerepel.
+
+**Kapcsolódó fejezetek:** §2.1, §2.3, §10, §18, §25 (1–10, 20).
+
+---
+
+### 29.2 Fázis 22 – Feature-first refaktor: `features/` könyvtár és domain izoláció
+
+**Kontextus:** A §23 javasolt szerkezet és a §2.2 moduláris architektúra előírja a feature mappákat types, schema, service nyomvonalakkal.
+
+**Cél:** A meglévő `components/` és `app/` alatti logika fokozatos áthelyezése úgy, hogy minden nagyobb üzleti terület (`news`, `calendar`, `gallery`, …) önálló feature legyen; a route-ok vékonyak maradnak.
+
+**Tartalom (javasolt feladatok):**
+
+- Modulonként: `types` → `validation` (Zod vagy választott séma) → `service` (fetch, transform) → „dumb” UI komponensek.
+- Közös primitívek továbbra is `components/ui/` alatt; domain-specifikus UI a feature-ben.
+- Migráció lépésenként, modulonként lezárható checkpointokkal (§24.3).
+
+**Elfogadási feltételek (javasolt):**
+
+- Legalább egy referenciamodul (pl. hírek) teljes feature-szerkezetben; a többi modulra követhető minta és dokumentált migrációs sorrend.
+
+**Kapcsolódó fejezetek:** §2.2, §2.3, §23, §26.
+
+---
+
+### 29.3 Fázis 23 – Observability, teljesítmény és üzemeltetés
+
+**Kontextus:** A §21 biztonság és a §20 kiegészítő funkciók mellett a hosszú távú működéshez kell láthatóság és mérhetőség.
+
+**Cél:** Éles és staging környezetben is értelmezhető hibanaplózás, alapvető metrikák és teljesítménybudget; a felhasználói élmény romlása ne csak szubjektív visszajelzésből derüljön ki.
+
+**Tartalom (javasolt feladatok):**
+
+- Szerveroldali log struktúra (kérések, auth hibák, 5xx okok) PII nélkül; opcionálisan Sentry / OpenTelemetry / hostoló platform integráció.
+- Next.js: image optimization, bundle méret figyelés, LCP / CLS célértékek dokumentálása `docs/architecture.md`-ben.
+- Alap health check (pl. API ping + DB connectivity) üzemeltetők számára.
+
+**Elfogadási feltételek (javasolt):**
+
+- Dokumentált „hogyan debugolunk egy éles incidenst” 1 oldal; legalább egy automatikus riasztás vagy jelentés prototípus (környezetfüggő).
+
+**Kapcsolódó fejezetek:** §3, §20, §21, §24.
+
+---
+
+### 29.4 Fázis 24 – SEO, Open Graph, megosztás és hivatalos kommunikáció
+
+**Kontextus:** A portál hivatalos információs felület is; a §8 landing és a nyilvános oldalak felderíthetősége közvetlenül érinti a HÖK elérhetőségét.
+
+**Cél:** Keresőbarát, megosztható oldalak: cím, leírás, nyelvváltás és kanonikus URL-ek konzisztenciája; közösségi előnézetek.
+
+**Tartalom (javasolt feladatok):**
+
+- `metadata` / `generateMetadata` modulonként; `sitemap` és `robots` finomhangolás; strukturált adat (hol releváns: események, hírek).
+- Nyelvi alternatívák (`hreflang` vagy egyenértékű stratégia) dokumentálása.
+- Megosztás gombok a §20 szerinti kiegészítő funkciók részeként, adatvédelmi minimumokkal (nincs felesleges harmadik fél trackelés jóváhagyás nélkül).
+
+**Elfogadási feltételek (javasolt):**
+
+- Lighthouse SEO alap audit dokumentált eredménnyel főbb útvonalakra; nincs üres vagy duplikált `<title>` kritikus oldalakon.
+
+**Kapcsolódó fejezetek:** §8, §20, §22.
+
+---
+
+### 29.5 Fázis 25 – Hallgatói élmény: globális keresés, személyre szabás, visszajelzés
+
+**Kontextus:** A §19 keresés és kategóriák, valamint a §20 keresési előzmények és értesítések iránya.
+
+**Cél:** A hallgató gyorsan megtalálja a számára releváns híreket, eseményeket, útmutatókat; opcionálisan mentett szűrések, „kövesd ezt a kategóriát” jellegű egyszerűsített UX (nem feltétlenül push értesítés az első körben).
+
+**Tartalom (javasolt feladatok):**
+
+- Globális kereső vagy kiemelt kereső entry point a navban; egyesített index vagy modulonkénti API + frontend aggregáció – architekturális döntés a §24.2 szerinti decision logban rögzítendő.
+- Elmentett keresések / szűrők: autentikált office felhasználónak szerveroldali opció is szóba jöhet (vs. csak localStorage vendégnek – adatvédelmi határ dokumentálva).
+- Visszajelzési csatorna (pl. rövid űrlap, CAPTCHA vagy rate limit) hibás információ jelzésére.
+
+**Elfogadási feltételek (javasolt):**
+
+- Keresési és szűrési szabályok rögzítve `docs/search-rules.md`-ben; a11y: kereső billentyűzettel használható (§22).
+
+**Kapcsolódó fejezetek:** §9, §19, §20, §22.
+
+---
+
+### 29.6 Fázis 26 – Integrációk és automatizáció (Facebook / Instagram / naptár / export)
+
+**Kontextus:** A §10 hírforrások és a §11 naptár workflow; a §12 kalkulátor export; a landing admin UI-ban megjelenő adapter-felületek koncepcionálisan ide kapcsolódnak.
+
+**Cél:** A manuális másolás helyett kontrollált, auditálható integrációk, ahol az üzleti kockázat és a jogi megfelelés is kezelhető.
+
+**Tartalom (javasolt feladatok):**
+
+- Közösségi feed import: token tárolás titkos kezelése, rate limit, hibaüzenetek office nyelven; opcionálisan csak „bemutató” stub marad addig, amíg nincs szerződés szerinti adatátadás.
+- Naptár: iCal export/import, campus naptár szinkron – ütemezés szerint.
+- KKI és egyéb modulok: export formátumok (PDF/CSV) a §12 elvárásokkal összhangban.
+
+**Elfogadási feltételek (javasolt):**
+
+- Minden külső hívás szerveroldalon, titkok nélkül a kliens bundle-ben; audit napló (§21) az érzékeny írásokhoz.
+
+**Kapcsolódó fejezetek:** §10–§12, §21, §27.
+
+---
+
+### 29.7 Fázis 27 – Minőség: E2E, szerződéstesztek, vizuális regresszió, release folyamat
+
+**Kontextus:** A §25 20. pont (tesztelés és polish) és a §27 kész definíció; a §26 AI fejlesztési szabályok fenntarthatóságot követelnek.
+
+**Cél:** Regressziók korai felismerése; PR-ek merge előtti automatikus ellenőrzése; verziózott release jegyzőkönyv.
+
+**Tartalom (javasolt feladatok):**
+
+- Playwright (vagy választott) E2E a kritikus útvonalakra: nyilvános főoldal, bejelentkezés, egy admin írási művelet smoke.
+- API szerződéstesztek vagy snapshot tesztek a mapper és validációs rétegre.
+- Opcionális: Chromatic / Percy jellegű vizuális diff a design system proof kritikus komponenseire.
+- `CHANGELOG` és címkézett release gyakorlat rögzítése a `docs/progress-log.md`-ben.
+
+**Elfogadási feltételek (javasolt):**
+
+- CI-ben zöld a minimális tesztcsomag; a dokumentációban linkelt „hogyan futtatjuk lokálisan” lépéssor.
+
+**Kapcsolódó fejezetek:** §24.1, §25 (20), §26, §27.
+
+---
+
+### 29.8 Ötletbank: további bővítési irányok (nem ütemezett)
+
+Az alábbi tételek **nem részei a §25 21–27. sorrendnek**; önállóan vagy későbbi fázisokként, priorizálás és jogi/üzleti egyeztetés után emelhetők be. Formátum: rövid **cél** + **fő elem**; részletes scope esetén külön alpont vagy decision log bejegyzés javasolt.
+
+#### 29.8.1 Hallgatói érték és közösség
+
+- **Hírlevél / digest:** heti vagy havi összefoglaló e-mail (kettős opt-in, leiratkozás, adatkezelési tájékoztató). *Kapcsolódik:* §10, §21.
+- **RSS / Atom feed:** hírek és események gépi felhasználóra (naptár app, feed olvasó). *Kapcsolódik:* §10, §11.
+- **Kedvencek és „később olvasom”:** böngészőben vagy opcionálisan bejelentkezett office nézetben mentett hírek (nem helyettesíti a teljes auth modellt). *Kapcsolódik:* §20, §29.5.
+- **PWA:** telepíthető webapp, offline cache a statikus és legutóbb megtekintett nyilvános oldalakra (mérési és frissítési szabályokkal). *Kapcsolódik:* §3, §22.
+- **Esemény „emlékeztető” export:** egy kattintással `.ics` egy eseményhez vagy szűrt listához. *Kapcsolódik:* §11, §29.6.
+
+#### 29.8.2 Tartalom, átláthatóság, hivatalosság
+
+- **Űrlapközpont:** pályázat, javaslat, panasz, rendezvényjelentkezés – sablonok, Office általi státusz (beérkezett / elutasítva / megválaszolva), audit. *Kapcsolódik:* §16–§18, §21.
+- **Letöltések / dokumentumtár:** a guides modultól elkülönített vagy azzal összekapcsolt „hivatalos PDF” gyűjtemény verziózással vagy „érvényes ettől” dátummal. *Kapcsolódik:* §14, §2.1.
+- **Átláthatósági összefoglaló:** közérthető számok és szöveges magyarázat (pl. éves tevékenység, rendezvényszám – csak olyan adat, amelyhez van jogalap és jóváhagyás). *Kapcsolódik:* §15, §21.
+- **Szervezeti fa / kapcsolat:** interaktív fa vagy lapozható kártyák a HÖK szervezetéről, felelősök elérhetőségeivel (spam védelem). *Kapcsolódik:* §15.
+- **Partnerek és projektek:** külső szervezetek, együttműködések rövid bemutatkozása (szerkesztett, nem automatikus linkfarm). *Kapcsolódik:* §15.
+
+#### 29.8.3 Tanulmányi és karrier jellegű kiegészítések
+
+- **GYIK modul:** kereshető kérdés–válasz, Office által karbantartott; összekapcsolható a guides-szal. *Kapcsolódik:* §14, §19.
+- **„Melyik szakmai képviselet?”** döntőfa vagy szűrő (hallgatói jogok, elérhetőség) – tartalomjogilag egyeztetendő. *Kapcsolódik:* §15.
+- **KKI kiterjesztések:** órarend import (CSV), terv vs tényleges félév összehasonlítás, megosztható link (read-only snapshot). *Kapcsolódik:* §12.
+- **E-learning / linkgyűjtemény:** hivatalos tananyag- és platformlinkek kurált listája (nem LMS helyettesítés). *Kapcsolódik:* §14.
+
+#### 29.8.4 Rendezvény és helyszín
+
+- **Térképes nézet:** események és iroda helyszín megjelenítése (OpenStreetMap vagy egyeztetett szolgáltatás, adatvédelem). *Kapcsolódik:* §11, §15.
+- **„Hogyan jutok oda”:** tömegközlekedés + akadálymentesség megjegyzés mező eseményenként. *Kapcsolódik:* §11, §22.
+- **Várólista tornateremhez:** ha a foglalás betelt, várólista és automatikus felszabadulás értesítés (komplex workflow – külön spec). *Kapcsolódik:* §11.
+
+#### 29.8.5 Interakció és visszacsatolás
+
+- **Rövid szavazások / közvélemény:** anonim, időzített, eredmény csak lezárás után (abusz elleni limit). *Kapcsolódik:* §20, §21.
+- **Hibás információ jelzése:** egy mezős űrlap URL előtöltéssel, rate limit, Office feladatlista. *Kapcsolódik:* §29.5.
+- **Opcionális chat / asszisztens:** csak GYIK-ből tanított, emberi handoff; nem kötelező AI. *Kapcsolódik:* §21 (adat, audit).
+
+#### 29.8.6 Technikai, üzemeltetés, megfelelőség
+
+- **Cookie / analytics suite:** egységes consent banner, dokumentált third-party lista. *Kapcsolódik:* §21, §24.
+- **Egyszerűsített / nagy kontrasztú „olvasó” nézet:** tipográfia és zaj csökkentése egy kapcsolóval (a teljes téma mellett). *Kapcsolódik:* §4, §22.
+- **Tartalom-fordítási workflow:** angol szöveg státusz „review pending”, Office jóváhagyás után publikálás. *Kapcsolódik:* §2.1, §10, §16.
+- **Státusz oldal:** külső szolgáltatás vagy saját `/status` – szándékos leállások kommunikációja. *Kapcsolódik:* §29.3.
+
+**Elv:** minden ötlet a §2.1 SSOT, a §2.4 security-first és a §22 akadálymentesség szűrőjén esik át, mielőtt ütemezett fejlesztéssé válik.
+
+---
+
+### 29.9 Fázis 28 – Szezonális, kikapcsolható ünnepi hangulat (díszítő réteg)
+
+**Kontextus:** A portál hivatalos arculata mellett időszakosan, mértékkel erősíthető a közösségi érzés; a díszítés **soha nem veheti el** a tartalom olvashatóságát és a §22 szerinti akadálymentességet. A magyarországi és egyetemi közösség számára ismert ünnepekhez illeszkedő, **felhasználó által kikapcsolható** vizuális réteg külön fejlesztésként, a fő funkciók után valósítható meg.
+
+**Cél:**
+
+- Időszakos „hangulat” effektek és opcionális dekorációs elemek (nem tartalmi követelmény, hanem design layer).
+- **Alapértelmezett:** a rendszer a **magyarországi** dátum- és ünnepkultúrához igazított **javasolt időszakokban** finom díszítést ajánlhat (pl. advent–karácsony, szilveszter–újév, farsang, húsvét, májusfa / május 1. környéke, október 23., mindenszentek / halottak napja, **Halloween** mint opcionális, nem kötelező blokk).
+- **Felhasználói kontroll:** egyértelmű kapcsoló (pl. „Ünnepi díszítés” / „Seasonal effects”) a **globális beállításokban** vagy a láblécben / navban; állapot **localStorage** vagy profilhoz kötött preferencia (döntés: vendég vs. belső felhasználó). Harmadik állapot: **„Rendszer követése”** = csak akkor jelenik meg díszítés, ha nincs `prefers-reduced-motion: reduce`.
+- **Admin / Office opció:** globális „díszítés kikapcsolva” (pl. gyászidőszak, incidens, vizsgaidőszak csendesebb megjelenés) – csak jogosultsággal, auditálhatóan.
+
+**Példa motívumok (nem kötelező lista, döntésnaplóban bővíthető):**
+
+| Időszak (tipikus) | Példa díszítés / effekt | Megjegyzés |
+|-------------------|-------------------------|------------|
+| Advent, karácsony | finom **hóesés** (CSS / canvas, alacsony CPU), opcionális diszkrét fenyő / csillag motívum a headerben | ne takarja a menüt |
+| Szilveszter, újév | rövid ideig **tűzijáték** vagy konfetti (egyszeri animáció, **nem** villogó teljes képernyő) | §22: villogásmentesség |
+| Halloween (opcionális) | tökök, pók minimalista sziluett, lila–narancs **akcent** token | kulturális érzékenység: kikapcsolható alapból HU-only közönségnél |
+| Húsvét / tavasz | tojás ikon, zöld növény motívum, könnyű háttér textúra | |
+| Október 23., nemzeti ünnep | visszafogott trikolór **akcent** (nem animált lobogtatás egész nap) | méltóság |
+| Mindenszentek / halottak napja | csendes, statikus vizuális hang (szürke árnyalat, levél motívum) | nincs vidám konfetti |
+
+**Technikai és UX szabályok:**
+
+- **SSOT:** színek és animáció időtartama design tokenekből; külön `seasonal` vagy `festivity` konfigurációs objektum (dátumtartomány → téma azonosító → engedélyezett effektek listája).
+- **Teljesítmény:** alapértelmezésben GPU-barát CSS; canvas/WebGL csak ha szükséges és alacsony részletességgel; mobil nézeten egyszerűsített vagy automatikusan kikapcsolt effekt opció.
+- **Akadálymentesség:** `prefers-reduced-motion` esetén **csak statikus** díszítés vagy teljes tiltás; képernyőolvasó számára a díszítő réteg **dekorációként** jelölendő (`aria-hidden`), fókusz ne kerüljön dekor elemre.
+- **Belső felület:** `(internal)` / admin útvonalakon alapból **nincs** distrakció, vagy ugyanaz a kapcsoló érvényesül.
+- **Biztonság:** külső asset vagy CDN csak jóváhagyott forrásból; inline script tiltva a spec §21 szellemében.
+
+**Elfogadási feltételek (javasolt):**
+
+- A díszítés kikapcsolása egy kattintással / azonnal érvényesül, frissítés nélkül is (kliens állapot).
+- Lighthouse és manuális a11y ellenőrzés: a díszítés bekapcsolt állapotban sem romlik jelentősen az olvashatóság és a fókuszrend.
+- Dokumentált ünnepnaptár-forrás (saját konfig vagy HU locale szabályok) és „hogyan adunk hozzá új időszakot” rövid útmutató a `docs/design-system.md` vagy külön `docs/seasonal-theme.md` fájlban.
+
+**Kapcsolódó fejezetek:** §4 (design rendszer), §20 (kiegészítő UX), §22 (mobil és a11y), §25 (28), §26 (AI / fejlesztési konzisztencia).

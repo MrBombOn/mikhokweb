@@ -3,6 +3,8 @@ image: node:22-alpine
 
 variables:
   NPM_CONFIG_CACHE: "$CI_PROJECT_DIR/.npm"
+  DATABASE_URL: "file:./dev.db"
+  AUTH_SECRET: "0123456789abcdef0123456789abcdef"
 
 cache:
   key: ${CI_COMMIT_REF_SLUG}

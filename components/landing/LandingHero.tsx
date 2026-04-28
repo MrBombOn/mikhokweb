@@ -1,4 +1,12 @@
+/**
+ * @file Landing hero + modulrács (2 oszlopos layout)
+ *
+ * @description
+ * Bal oldal: logó, cím, szöveg, „Ugrás a hírekhez” görgetés (`#landing-news`).
+ * Jobb oldal: `landingCards` alapján `Link` kártyák a fő modulokra.
+ */
 'use client';
+
 import Link from 'next/link';
 import { useApp } from '@/components/layout/AppProvider';
 import { landingCards } from '@/lib/content';

@@ -30,6 +30,45 @@ Fontos technikai és design döntések (master spec §24.2). Új bejegyzésnél 
 
 ---
 
+## D-2026-04-28-003 – Prisma és fejlesztői adatbázis
+
+| Mező | Tartalom |
+|------|----------|
+| **Téma** | ORM verzió és lokális DB |
+| **Alternatívák** | Prisma 7 + adapter; Prisma 6 klasszikus séma; kizárólag mock adat |
+| **Döntés** | **Prisma 6** + **SQLite** (`file:./dev.db`), első migráció `User` + `UserRole`; CI-ben `DATABASE_URL` env a `postinstall` `prisma generate` miatt |
+| **Indoklás** | A Prisma 7 adapter-alapú beállítás nagyobb lépés; a Fázis 1 célja a gyors, reprodukálható bootstrap és a séma SSOT |
+| **Roadmap-hatás** | Fázis 3: PostgreSQL éles URL, jelszó hash, session; séma bővítés ugyanitt |
+| **Érintett fájlok** | `prisma/schema.prisma`, `prisma/migrations/`, `lib/db.ts`, `package.json`, `.env.example`, CI fájlok |
+
+---
+
+## D-2026-04-28-004 – Admin zóna védelme Fázis 2-ben
+
+| Mező | Tartalom |
+|------|----------|
+| **Téma** | Hogyan legyen `/admin` védett a valódi auth előtt |
+| **Alternatívák** | Csak kliens `localStorage`; csak layout üzenet; middleware + httpOnly cookie |
+| **Döntés** | **Middleware + httpOnly cookie** (`hok_admin_gate`), API route a beállítás/törléshez; belépés után a kliens `POST`, guest `DELETE` |
+| **Indoklás** | A szerver ellenőrizheti a belépést a következő fázisban; a middleware már most blokkolja a közvetlen URL-t; a cookie nem érhető el JS-ből (XSS ellen jobb, mint csak localStorage) |
+| **Roadmap-hatás** | Fázis 3: ugyanitt session/JWT vagy NextAuth, a gate logika cseréje |
+| **Érintett fájlok** | `middleware.ts`, `AppProvider.tsx`, `Navbar.tsx`, `AdminDeniedBanner.tsx` (korábbi `admin-gate` route Fázis 3-ban törölve) |
+
+---
+
+## D-2026-04-28-005 – Session: JWT cookie vs NextAuth (Fázis 3)
+
+| Mező | Tartalom |
+|------|----------|
+| **Téma** | Szerveroldali session megvalósítása |
+| **Alternatívák** | NextAuth / Auth.js; külső IdP; saját JWT httpOnly süti |
+| **Döntés** | **Saját JWT** (`jose`, HS256), `hok_session` httpOnly cookie, `AUTH_SECRET` (≥32); belépés `User` tábla + `bcryptjs` |
+| **Indoklás** | Minimális függőség, Edge-barát verify (`jose/jwt/verify`), könnyen bővíthető RBAC claimmel; később NextAuth-ra migrálható |
+| **Roadmap-hatás** | Minden védett API: session olvasás + szerepkör; refresh / rotation később |
+| **Érintett fájlok** | `lib/auth/session.ts`, `lib/auth/password.ts`, `app/api/auth/login/route.ts`, `app/api/auth/session/route.ts`, `middleware.ts`, `prisma/seed.ts` |
+
+---
+
 ### Sablon (másolás új döntéshez)
 
 ```

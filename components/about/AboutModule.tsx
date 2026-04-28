@@ -1,4 +1,8 @@
+/**
+ * @file About szervezeti kártyák – `aboutPeople` listából
+ */
 'use client';
+
 import { useApp } from '@/components/layout/AppProvider';
 import { Card, SectionHeader } from '@/components/ui/Core';
 import { aboutPeople } from '@/lib/content';

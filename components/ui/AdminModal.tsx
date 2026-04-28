@@ -1,8 +1,18 @@
-// Magyar magyarázó megjegyzés: ez a fájl a landing oldal működésének egy különálló, később is könnyen módosítható része.
+/**
+ * @file Admin / belépés modál – portal alapú overlay
+ *
+ * @description
+ * A `createPortal(..., document.body)` biztosítja, hogy a modál a DOM legfelső
+ * rétegén jelenjen meg. Nyitáskor `admin-modal-open` osztály a `body`-n (CSS scroll lock).
+ *
+ * @props
+ * - `open`: láthatóság
+ * - `title`: `aria-label` és fejléc szöveg
+ * - `onClose`: underlay és Bezárás gomb
+ * - `children`: tetszőleges tartalom (űrlap, szöveg)
+ */
 'use client';
 
-// Egységes, újrahasználható admin modal komponens.
-// Később más oldalak is ezt használhatják, csak a tartalom változik.
 import { ReactNode, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 
@@ -28,11 +38,13 @@ export function AdminModal({ open, title, onClose, children }: AdminModalProps) 
       <div className="admin-modal-window card" onClick={(e) => e.stopPropagation()}>
         <div className="admin-modal-header">
           <h3>{title}</h3>
-          <button className="btn btn-secondary" type="button" onClick={onClose}>Bezárás</button>
+          <button className="btn btn-secondary" type="button" onClick={onClose}>
+            Bezárás
+          </button>
         </div>
         <div className="admin-modal-content">{children}</div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 }

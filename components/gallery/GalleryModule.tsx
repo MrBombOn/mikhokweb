@@ -1,4 +1,12 @@
+/**
+ * @file Galéria modul – grid / mappa / timeline nézet (demo)
+ *
+ * @description
+ * Adat: `galleryFolders`, `galleryItems` a `content.ts`-ből. Admin: új elem demo,
+ * törlés figyelmeztetés toasttal.
+ */
 'use client';
+
 import { useMemo, useState } from 'react';
 import { useApp } from '@/components/layout/AppProvider';
 import { Card, SectionHeader } from '@/components/ui/Core';

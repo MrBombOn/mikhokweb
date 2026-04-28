@@ -1,3 +1,6 @@
+/**
+ * @file Admin irányítópult – `/admin`
+ */
 import { Card, SectionHeader } from '@/components/ui/Core';
 export default function AdminDashboardPage() {
   return (

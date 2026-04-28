@@ -1,4 +1,8 @@
+/**
+ * @file Útmutatók modul – kártyák és modál megnyitás
+ */
 'use client';
+
 import { useApp } from '@/components/layout/AppProvider';
 import { Card, SectionHeader } from '@/components/ui/Core';
 import { guideItems } from '@/lib/content';

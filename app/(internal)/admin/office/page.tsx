@@ -1,5 +1,11 @@
+/**
+ * @file Belső irodai munkafelület – `/admin/office`
+ *
+ * @description
+ * A master spec `(internal)/office` és `(public)/office` egyaránt `/office` lenne route group
+ * nélkül – ezért a belső felület ide került. A nyilvános iroda: `/office`.
+ */
 import { Card, SectionHeader } from '@/components/ui/Core';
-/** Belső irodai munkafelület: a spec `(internal)/office/page.tsx` útvonala ütközne a nyilvános `/office`-szal, ezért `/admin/office`. */
 export default function InternalOfficePage() {
   return (
     <div className="app-shell section">

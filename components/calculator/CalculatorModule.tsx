@@ -1,4 +1,12 @@
+/**
+ * @file KKI kalkulátor UI – szemeszterek, tárgyak, összesítő panel
+ *
+ * @description
+ * Kezdőállapot: `initialSemesters` a `lib/content.ts`-ből. `useMemo` számolja a
+ * KI/KKI/súlyozott átlag demó értékeket. Scroll esetén „compact” összegző sáv.
+ */
 'use client';
+
 import { useEffect, useMemo, useState } from 'react';
 import { useApp } from '@/components/layout/AppProvider';
 import { Card, SectionHeader } from '@/components/ui/Core';

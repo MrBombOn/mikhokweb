@@ -1,4 +1,8 @@
+/**
+ * @file Office / iroda modul – nyitvatartás és kapcsolódó blokkok
+ */
 'use client';
+
 import { useApp } from '@/components/layout/AppProvider';
 import { Card, SectionHeader } from '@/components/ui/Core';
 import { officeInfo } from '@/lib/content';

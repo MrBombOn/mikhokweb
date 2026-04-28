@@ -1,3 +1,10 @@
+/**
+ * @file Landing szekció szövegei (HU/EN) – a főoldal hero és hír blokk számára
+ *
+ * @description
+ * Külön szótár a `lib/i18n/messages.ts`-től: több landing-specifikus kulcs (keresés,
+ * admin műveletek, adapterek). A `getLandingCopy(lang)` visszaadja az adott nyelvi ágat.
+ */
 import type { Lang } from '@/types';
 
 export const landingDictionary = {
@@ -95,6 +102,10 @@ export const landingDictionary = {
   }
 } as const;
 
+/**
+ * @param lang aktuális UI nyelv
+ * @returns `landingDictionary` megfelelő ága (teljes kulcskészlet egy nyelvre)
+ */
 export function getLandingCopy(lang: Lang) {
   return landingDictionary[lang];
 }

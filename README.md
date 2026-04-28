@@ -18,11 +18,16 @@ A forráskód és a CI a következő repóban van (itt történik a verziókezel
 ```bash
 git clone https://github.com/MrBombOn/mikhokweb.git
 cd mikhokweb
+# Hozd létre a `.env.local`-t a `.env.example` alapján (DATABASE_URL + AUTH_SECRET).
 npm ci
+npm run db:migrate
+npm run db:seed
 npm run dev
 ```
 
-További parancsok: `npm run lint`, `npm run build` (lásd `package.json`).
+Belépés: seed után pl. **`admin` / `admin-dev-change-me`** vagy **`office` / `office-dev-change-me`** (lásd `prisma/seed.ts`, élesben cseréld env + seeddel).
+
+További parancsok: `npm run lint`, `npm run build`, `npm run db:studio` (lásd `package.json`). Az adatbázis séma: `prisma/schema.prisma`.
 
 ## Hírek modul (rövid)
 

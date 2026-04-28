@@ -1,5 +1,21 @@
 /**
- * SSOT: statikus UI szövegek HU/EN. Modul-specifikus szövegek később ide vagy al-fájlokba szervezhetők.
+ * @file Statikus UI szövegek magyar és angol nyelven (SSOT)
+ *
+ * @description
+ * Ez a fájl tartalmazza a **navigációs címkéket** (`nav`) és a **közös UI szövegeket**
+ * (`common`), amelyeket a `t(lang)` függvény (`lib/i18n/index.ts`) ad vissza.
+ *
+ * @szerkezet
+ * - `hu` / `en`: két párhuzamos fa, **azonos kulcsokkal** – kötelező mindkét nyelvre kitölteni.
+ * - `nav`: `Navbar` `Link` feliratai; az `admin` kulcs csak admin módban megjelenő `/admin` linkhez.
+ * - `common`: gombok, modál címkék, naptár nézet nevek, stb.
+ *
+ * @bővítés
+ * Modulonkénti szövegek szétválaszthatók: `messages/news.hu.ts` import és spread –
+ * egyelőre egy fájlban tartjuk az átláthatóság miatt.
+ *
+ * @type
+ * `as const` – a string literálok szűk típusként inferálódnak (`Messages` típus).
  */
 export const messages = {
   hu: {
@@ -12,6 +28,7 @@ export const messages = {
       guides: 'Útmutatók',
       about: 'About Us',
       office: 'Office',
+      admin: 'Admin',
     },
     common: {
       adminLogin: 'Admin belépés',
@@ -38,6 +55,7 @@ export const messages = {
       guides: 'Guides',
       about: 'About Us',
       office: 'Office',
+      admin: 'Admin',
     },
     common: {
       adminLogin: 'Admin login',

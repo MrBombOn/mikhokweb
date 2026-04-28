@@ -19,10 +19,16 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "db:seed": "prisma db seed"
+  },
+  "prisma": {
+    "seed": "npx tsx prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",
+    "bcryptjs": "^3.0.3",
+    "jose": "^6.2.3",
     "next": "15.5.7",
     "react": "19.1.0",
     "react-dom": "19.1.0",
@@ -30,12 +36,14 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20.17.50",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
     "eslint": "^9.25.1",
     "eslint-config-next": "15.5.7",
     "prisma": "^6.19.0",
+    "tsx": "^4.21.0",
     "typescript": "^5.8.3"
   }
 }

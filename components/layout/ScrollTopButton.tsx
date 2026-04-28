@@ -1,9 +1,21 @@
+/**
+ * @file „Lap tetejére” lebegő gomb
+ *
+ * @description
+ * Scroll pozíció figyelése: ha `window.scrollY > 220`, megjelenik a gomb.
+ * Kattintás: `window.scrollTo({ behavior: 'smooth' })` – felhasználóbarát animáció.
+ *
+ * @pozíció
+ * `fixed` jobb alsó sarok – ne ütközzön a toast stackkel (z-index 50).
+ */
 'use client';
+
 import { useEffect, useState } from 'react';
 import { ArrowUpIcon } from '@/components/ui/Icons';
 
 export function ScrollTopButton() {
   const [visible, setVisible] = useState(false);
+
   useEffect(() => {
     const onScroll = () => setVisible(window.scrollY > 220);
     onScroll();

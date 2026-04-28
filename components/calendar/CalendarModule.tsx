@@ -1,4 +1,21 @@
+/**
+ * @file Naptár + tornaterem modul (kliens)
+ *
+ * @description
+ * A master spec szerinti **három nézet** (timeline, cards, calendar) ugyanarra a
+ * szűrt eseménylistára és a kiválasztott napra épül. A foglalási űrlap **csak** tornaterem
+ * igényekre szól; az admin jóváhagyás a `requests` állapoton történik.
+ *
+ * @állapot
+ * - `events`: szerkeszthető eseménylista (`calendarItems` másolata).
+ * - `requests`: foglalási sorok + státusz (`pending` / `approved` / `rejected`).
+ * - `form`: foglalási űrlap mezői; `bookingConflicts` időátfedés figyelmeztetés.
+ *
+ * @segédfüggvények
+ * `isoDate`, `toMinutes`, `overlaps`, `parseSlot` – dátum/idő normalizálás és ütközés detektálás.
+ */
 'use client';
+
 import { useMemo, useState } from 'react';
 import { useApp } from '@/components/layout/AppProvider';
 import { Card, SectionHeader } from '@/components/ui/Core';

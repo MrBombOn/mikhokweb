@@ -23,3 +23,75 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
+
+enum ContentStatus {
+  draft
+  scheduled
+  published
+  archived
+  deleted
+}
+
+enum NewsSource {
+  internal
+  facebook
+  instagram
+}
+
+model News {
+  id           Int           @id @default(autoincrement())
+  source       NewsSource    @default(internal)
+  category     String
+  status       ContentStatus @default(draft)
+  pinned       Boolean       @default(false)
+  listDate     String
+  titleHu      String
+  titleEn      String
+  textHu       String
+  textEn       String
+  author       String
+  cover        String        @default("blue")
+  hasCover     Boolean       @default(true)
+  scheduledFor String?
+  externalUrl  String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+enum BookingStatus {
+  pending
+  approved
+  rejected
+}
+
+/** Naptár események (§11) – vendégnek csak `published`. */
+model CalendarEvent {
+  id        Int           @id @default(autoincrement())
+  titleHu   String
+  titleEn   String
+  eventDate String
+  time      String
+  location  String
+  category  String
+  dayLabel  String?
+  note      String?
+  status    ContentStatus @default(published)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+/** Tornaterem foglalási igények. */
+model GymBooking {
+  id             Int           @id @default(autoincrement())
+  title          String        @default("Tornaterem foglalás")
+  applicantName  String
+  email          String
+  organization   String?
+  bookingDate    String
+  startTime      String
+  endTime        String
+  purpose        String
+  status         BookingStatus @default(pending)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}

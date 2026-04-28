@@ -1,3 +1,4 @@
+/** @file Admin – kategóriák `/admin/categories` */
 import { Card, SectionHeader } from '@/components/ui/Core';
 export default function AdminCategoriesPage() {
   return (

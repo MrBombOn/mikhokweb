@@ -1,3 +1,4 @@
+/** @file Admin – tartalom `/admin/content` */
 import { Card, SectionHeader } from '@/components/ui/Core';
 export default function AdminContentPage() {
   return (
