@@ -1,0 +1,20 @@
+# GitLab mirror / primary: lint + production build (same checks as GitHub Actions)
+image: node:22-alpine
+
+variables:
+  NPM_CONFIG_CACHE: "$CI_PROJECT_DIR/.npm"
+
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+  paths:
+    - .npm/
+
+stages:
+  - verify
+
+lint-and-build:
+  stage: verify
+  script:
+    - npm ci
+    - npm run lint
+    - npm run build

@@ -45,7 +45,7 @@ A roadmap **nem** a prototípus törlését jelenti először, hanem a **rétege
 - [x] `.gitignore`, `.env.example`
 - [x] `docs/roadmap.md`, `docs/workflow.md`, progress/decision log sablon
 - [x] Lokális `git init` + első commit (remote URL-t mindenki a saját repójához adja – lásd `workflow.md`)
-- [ ] CI minimál: `npm run lint` + `npm run build` (GitHub Actions vagy GitLab CI) – *következő konkrét PR*
+- [x] CI minimál: `npm run lint` + `npm run build` – [`.github/workflows/ci.yml`](../.github/workflows/ci.yml), [`.gitlab-ci.yml`](../.gitlab-ci.yml)
 
 **Elfogadás:** a fenti checklist a repóban látszik; a csapat tudja, melyik remote az elsődleges.
 

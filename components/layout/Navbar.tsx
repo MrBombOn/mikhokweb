@@ -7,6 +7,7 @@ import { MoonIcon, SunIcon, GlobeIcon, ShieldIcon } from '@/components/ui/Icons'
 import { t } from '@/lib/content';
 
 const links = [
+  { href: '/news', key: 'news' },
   { href: '/calendar', key: 'calendar' },
   { href: '/calculator', key: 'calculator' },
   { href: '/gallery', key: 'gallery' },

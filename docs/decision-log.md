@@ -17,6 +17,19 @@ Fontos technikai és design döntések (master spec §24.2). Új bejegyzésnél 
 
 ---
 
+## D-2026-04-28-002 – CI platform és Node verzió
+
+| Mező | Tartalom |
+|------|----------|
+| **Téma** | Hol fusson a lint + build |
+| **Alternatívák** | Csak GitHub Actions; csak GitLab CI; mindkettő |
+| **Döntés** | **Mindkettő**: `.github/workflows/ci.yml` + `.gitlab-ci.yml`, azonos lépések |
+| **Indoklás** | A repóhoz GitHub és GitLab is kapcsolódhat; így bármelyik elsődleges remote mellett azonnali visszajelzés |
+| **Roadmap-hatás** | Fázis 0 CI kész; Node verzió változásakor két fájl szinkronban tartása |
+| **Érintett fájlok** | `.github/workflows/ci.yml`, `.gitlab-ci.yml`, `docs/workflow.md` |
+
+---
+
 ### Sablon (másolás új döntéshez)
 
 ```

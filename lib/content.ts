@@ -2,16 +2,17 @@ import type { Lang, Semester } from '@/types';
 export const dictionary = {
   hu: {
     brand: 'PTE MIK HÖK',
-    nav: { calendar: 'Naptár', calculator: 'KKI kalkulátor', gallery: 'Galéria', guides: 'Útmutatók', about: 'About Us', office: 'Office' },
+    nav: { news: 'Hírek', calendar: 'Naptár', calculator: 'KKI kalkulátor', gallery: 'Galéria', guides: 'Útmutatók', about: 'About Us', office: 'Office' },
     common: { adminLogin: 'Admin belépés', editOn: 'Szerkeszthető mód', editOff: 'Szerkesztés lezárása', openNews: 'Hírek lenyitása', closeNews: 'Hírek elrejtése', save: 'Mentés', cancel: 'Mégse', accept: 'Elfogadás', reject: 'Elutasítás', timeline: 'Timeline', cards: 'Kártya nézet', calendar: 'Naptár nézet' }
   },
   en: {
     brand: 'PTE MIK HÖK',
-    nav: { calendar: 'Calendar', calculator: 'KKI Calculator', gallery: 'Gallery', guides: 'Guides', about: 'About Us', office: 'Office' },
+    nav: { news: 'News', calendar: 'Calendar', calculator: 'KKI Calculator', gallery: 'Gallery', guides: 'Guides', about: 'About Us', office: 'Office' },
     common: { adminLogin: 'Admin login', editOn: 'Editable mode', editOff: 'Lock editing', openNews: 'Open news', closeNews: 'Hide news', save: 'Save', cancel: 'Cancel', accept: 'Accept', reject: 'Reject', timeline: 'Timeline', cards: 'Card view', calendar: 'Calendar view' }
   }
 } as const;
 export const landingCards = [
+  { href: '/news', color: 'linear-gradient(135deg,#1a6fd4,#4a9fff)', titleHu: 'Hírek', titleEn: 'News', textHu: 'Hírlista, archívum és keresés.', textEn: 'News list, archive and search.' },
   { href: '/calendar', color: 'linear-gradient(135deg,#2858ff,#567dff)', titleHu: 'Naptár', titleEn: 'Calendar', textHu: 'Programok, idővonal, foglalás.', textEn: 'Programs, timeline and booking.' },
   { href: '/calculator', color: 'linear-gradient(135deg,#0f8f78,#28ba95)', titleHu: 'KKI kalkulátor', titleEn: 'KKI Calculator', textHu: 'KI, KKI, súlyozott átlag.', textEn: 'KI, KKI and weighted average.' },
   { href: '/gallery', color: 'linear-gradient(135deg,#7c49ff,#a06cff)', titleHu: 'Galéria', titleEn: 'Gallery', textHu: 'Mappák, nézetek, feltöltés.', textEn: 'Folders, views and upload.' },

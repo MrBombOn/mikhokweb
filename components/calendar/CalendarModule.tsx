@@ -11,7 +11,14 @@ type BookingForm = { name:string; email:string; organization:string; date:string
 type BookingRow = { id:number; title:string; slot:string; applicant:string; status:RequestStatus; purpose?:string; };
 
 const initialEvents: EventItem[] = calendarItems.map((item) => ({ ...item }));
-const seededRequests: BookingRow[] = bookingRequests.map((item, index) => ({ id: index + 100, title: item.title || 'Tornaterem foglalás', slot: item.slot || '', applicant: item.requester || 'Unknown', status: (item.status as RequestStatus) || 'pending', purpose: item.note || '' }));
+const seededRequests: BookingRow[] = bookingRequests.map((item, index) => ({
+  id: index + 100,
+  title: item.title || 'Tornaterem foglalás',
+  slot: item.slot || '',
+  applicant: 'requester' in item ? String((item as { requester?: string }).requester) : item.title,
+  status: (item.status as RequestStatus) || 'pending',
+  purpose: 'note' in item ? String((item as { note?: string }).note) : '',
+}));
 const emptyForm: BookingForm = { name:'', email:'', organization:'', date:'2026-05-08', start:'18:00', end:'20:00', purpose:'' };
 const dayNames = { hu:['H','K','Sze','Cs','P','Szo','V'], en:['M','T','W','T','F','S','S'] };
 

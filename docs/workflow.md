@@ -59,3 +59,10 @@ Commit üzenetek: értelmes mondat vagy **Conventional Commits** (`feat:`, `fix:
 
 - Soha ne kerüljön a repóba: `.env`, `.env.local`, jelszavak, kulcsok.
 - Csak **`.env.example`** maradhat követendő mintaként; érzékeny értékek nélkül.
+
+## 6. CI (automata ellenőrzés)
+
+- **GitHub:** `.github/workflows/ci.yml` – minden `push` és `pull_request` esetén a `main` és `master` ágon (és PR-eken) lefut: `npm ci` → `npm run lint` → `npm run build`.
+- **GitLab:** `.gitlab-ci.yml` – ugyanez a három lépés; a pipeline a branch push és merge request eseményekkor indul (GitLab alapbeállítás szerint).
+
+A CI **Node 22**-t használ (összhangban a lokális Next 15 környezettel). Ha a csapat LTS-en (`20`) akar standardot, egyeztetés után mindkét fájlban emeld a verziót, és rögzítsd a `decision-log.md`-ben.
