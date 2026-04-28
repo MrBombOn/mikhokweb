@@ -1,0 +1,25 @@
+// Fázis 1: minimális felhasználói modell (Office / Admin). A Guest nem tárolt felhasználó.
+// SQLite fejlesztői bootstrap; élesben PostgreSQL + ugyanez a séma (datasource URL .env-ből).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  OFFICE
+  ADMIN
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  role         UserRole @default(OFFICE)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}

@@ -1,6 +1,7 @@
 'use client';
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { Lang, Theme, ToastItem } from '@/types';
+import { loginFormSchema } from '@/lib/validation/auth';
 
 type LoginForm = { username: string; password: string };
 type AppContextValue = {
@@ -48,14 +49,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   function openAdminLogin() { setShowAdminLogin(true); }
   function closeAdminLogin() { setShowAdminLogin(false); }
   function submitAdminLogin() {
-    if (loginForm.username.trim() && loginForm.password.trim()) {
-      setIsAdmin(true);
-      setShowAdminLogin(false);
-      setLoginForm({ username: '', password: '' });
-      toast(lang === 'hu' ? 'Admin mód aktiválva.' : 'Admin mode enabled.', 'success');
+    const parsed = loginFormSchema.safeParse(loginForm);
+    if (!parsed.success) {
+      toast(lang === 'hu' ? 'Add meg a felhasználónevet és a jelszót.' : 'Please provide username and password.', 'warning');
       return;
     }
-    toast(lang === 'hu' ? 'Add meg a felhasználónevet és a jelszót.' : 'Please provide username and password.', 'warning');
+    setIsAdmin(true);
+    setShowAdminLogin(false);
+    setLoginForm({ username: '', password: '' });
+    toast(lang === 'hu' ? 'Admin mód aktiválva.' : 'Admin mode enabled.', 'success');
   }
   const value = useMemo(() => ({ lang, setLang, toggleLang, theme, setTheme, toggleTheme, isAdmin, setIsAdmin, setGuestMode, toast, toasts, removeToast, modal, openModal, closeModal, showAdminLogin, openAdminLogin, closeAdminLogin, loginForm, setLoginForm, submitAdminLogin }), [lang, theme, isAdmin, toasts, modal, showAdminLogin, loginForm]);
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

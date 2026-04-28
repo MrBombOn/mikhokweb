@@ -2,16 +2,31 @@
   "name": "hok-web-v11",
   "version": "1.0.0",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MrBombOn/mikhokweb.git"
+  },
+  "bugs": {
+    "url": "https://github.com/MrBombOn/mikhokweb/issues"
+  },
+  "homepage": "https://github.com/MrBombOn/mikhokweb#readme",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "postinstall": "prisma generate",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio"
   },
   "dependencies": {
+    "@prisma/client": "^6.19.0",
     "next": "15.5.7",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
@@ -20,6 +35,7 @@
     "@types/react-dom": "^19.1.2",
     "eslint": "^9.25.1",
     "eslint-config-next": "15.5.7",
+    "prisma": "^6.19.0",
     "typescript": "^5.8.3"
   }
 }
