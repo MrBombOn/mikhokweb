@@ -484,6 +484,7 @@ Az admin felület a teljes rendszer központi felügyeleti tere.
 ### 17.1 Fő részek
 
 - admin dashboard,
+- központi operációs / monitoring dashboard (összefoglaló állapot, verzió, függőségek, naplók; részletes követelmény: **§29.10**),
 - users management,
 - categories management,
 - content management,
@@ -492,7 +493,7 @@ Az admin felület a teljes rendszer központi felügyeleti tere.
 
 ### 17.2 Admin dashboard célja
 
-Az admin dashboard adjon áttekintést a rendszer állapotáról és a napi operatív teendőkről.
+Az admin dashboard adjon áttekintést a rendszer állapotáról és a napi operatív teendőkről. A **§29.10** szerinti kiterjesztett dashboard opcionálisan a teljes technikai és üzemeltetési képet is egy helyen összefoghatja (csak megfelelő **ADMIN** jogosultsággal és auditálható hozzáféréssel).
 
 ### 17.3 Kezelendő területek
 
@@ -655,6 +656,7 @@ pte-mik-hok-web/
 │  │  ├─ layout.tsx
 │  │  ├─ admin/page.tsx
 │  │  ├─ admin/users/page.tsx
+│  │  ├─ admin/ops/page.tsx
 │  │  ├─ admin/categories/page.tsx
 │  │  ├─ admin/content/page.tsx
 │  │  ├─ admin/audit/page.tsx
@@ -673,7 +675,8 @@ pte-mik-hok-web/
 │  │  ├─ bookings/route.ts
 │  │  ├─ users/route.ts
 │  │  ├─ categories/route.ts
-│  │  └─ audit/route.ts
+│  │  ├─ audit/route.ts
+│  │  └─ admin/ops/…
 │  ├─ layout.tsx
 │  ├─ globals.css
 │  ├─ loading.tsx
@@ -694,6 +697,8 @@ pte-mik-hok-web/
 │  └─ office/
 ├─ lib/
 │  ├─ auth/
+│  │  ├─ permissions.ts
+│  │  └─ …
 │  ├─ db/
 │  ├─ i18n/
 │  ├─ theme/
@@ -704,8 +709,10 @@ pte-mik-hok-web/
 │  ├─ state/
 │  └─ utils/
 ├─ prisma/
+├─ design-pack/
 ├─ content/
 ├─ public/
+│  └─ brand/
 ├─ styles/
 ├─ tests/
 ├─ docs/
@@ -734,6 +741,11 @@ A `docs/` mappában kötelezően vezetendő dokumentumok:
 - `decision-log.md`
 - `calculator-rules.md`
 - `search-rules.md`
+- `design-pack.md` (brand / `design-pack/` mappa használata; §32)
+
+A **§29.10** szerinti központi operációs dashboard bevezetésekor ajánlott külön dokumentum: `docs/ops-dashboard.md` (widgetek, adatforrások, frissítési gyakoriság, RBAC).
+
+A **§32** szerinti HÖK **design-pack** forrásfájljai a `design-pack/` mappában vannak; a `design-pack/README.md` és a **`docs/design-pack.md`** rögzíti a deploy és a UI-használat szabályait.
 
 ### 24.1 Progress log
 
@@ -798,8 +810,9 @@ A rendszer ajánlott megvalósítási sorrendje:
 26. Integrációk és automatizáció (lásd §29.6).
 27. Minőség, tesztek és folyamatos karbantartás (lásd §29.7).
 28. Szezonális, kikapcsolható ünnepi hangulat (díszítő réteg, HU naptár; lásd §29.9).
+29. Központi operációs és monitoring dashboard (admin; részletesen §29.10).
 
-A **21–28. pontok** jelenleg **javasolt továbbfázisok**: részletes leírásuk a §29-ben található (a 28. pont: §29.9). Prioritás, ütemezés és scope egyeztetés után beemelhetők a kötelező sorrendbe, vagy módosíthatók / elvethetők.
+A **21–29. pontok** jelenleg **javasolt továbbfázisok**: részletes leírásuk a §29-ben található (28.: §29.9, 29.: §29.10). Prioritás, ütemezés és scope egyeztetés után beemelhetők a kötelező sorrendbe, vagy módosíthatók / elvethetők.
 
 Minden pont csak akkor tekinthető lezárhatónak, ha az elfogadási feltételek teljesülnek, a dokumentáció frissült, és a következő lépés egyértelműen rögzítésre került.
 
@@ -841,6 +854,9 @@ A rendszer akkor tekinthető késznek, ha:
 - a mobilos és akadálymentes működés megfelelő,
 - a tesztek és fallback állapotok lefedettek,
 - a dokumentáció teljes,
+- a **§30** backend, a **§31** frontend és a **§32** design követelménylistája teljesül vagy a §24.2 decision log szerint egyértelműen elhalasztásra / módosításra került,
+- a vizuális minőség megfelel a **§32.3** szerinti **magas, polírozott („fancy”)** UI elvárásnak light és dark módban egyaránt,
+- a **design-pack** (§32.2) a repóban elérhető és a UI-ban kreatívan, a szemnek kellemes átmenetekkel kerül felhasználásra,
 - a projekt megszakítás után is egyértelműen folytatható.
 
 ---
@@ -851,11 +867,13 @@ Ez a dokumentum a projekt központi master specifikációja. Minden további roa
 
 A **§25** alap fejlesztési sorrenden túli, előre vetített lépések a **§29** fejezetben kaptak helyet; azok csak a fejezet elején leírt egyeztetés után válnak kötelező iránnyá.
 
+A **§30–§32** fejezetek **kötelező követelmény- és ellenőrzőlisták** a backend, a frontend és a design / brand minőség vonatkozásában; eltérés csak a §24.2 decision logban rögzített indoklással engedélyezhető.
+
 ---
 
 ## 29. További, javasolt fejlesztési fázisok (átgondolandó)
 
-Ez a fejezet a **§25 fejlesztési sorrend 21–27. pontjainak** részletes kibontása (**§29.1–§29.7**), a **28.** pont kibontása (**§29.9**), valamint a **§29.8** ötletbank. Célja, hogy a specifikációval összhangban lévő, előre gondolható fejlesztési irányok dokumentáltan rendelkezésre álljanak; a tételek **nem minősülnek automatikusan elfogadott követelménynek**, amíg a projekt szereplői nem erősítik meg őket (§24.2, `docs/decision-log.md`).
+Ez a fejezet a **§25 fejlesztési sorrend 21–27. pontjainak** részletes kibontása (**§29.1–§29.7**), a **28.** pont kibontása (**§29.9**), a **29.** pont kibontása (**§29.10**), valamint a **§29.8** ötletbank. Célja, hogy a specifikációval összhangban lévő, előre gondolható fejlesztési irányok dokumentáltan rendelkezésre álljanak; a tételek **nem minősülnek automatikusan elfogadott követelménynek**, amíg a projekt szereplői nem erősítik meg őket (§24.2, `docs/decision-log.md`).
 
 ### 29.1 Fázis 21 – Tartalmi és API SSOT: landing, modulok, egy adatforrás
 
@@ -1086,3 +1104,233 @@ Az alábbi tételek **nem részei a §25 21–27. sorrendnek**; önállóan vagy
 - Dokumentált ünnepnaptár-forrás (saját konfig vagy HU locale szabályok) és „hogyan adunk hozzá új időszakot” rövid útmutató a `docs/design-system.md` vagy külön `docs/seasonal-theme.md` fájlban.
 
 **Kapcsolódó fejezetek:** §4 (design rendszer), §20 (kiegészítő UX), §22 (mobil és a11y), §25 (28), §26 (AI / fejlesztési konzisztencia).
+
+---
+
+### 29.10 Fázis 29 – Központi operációs és monitoring dashboard (admin)
+
+**Kontextus:** A §17 admin felület és a §29.3 observability irány mellett szükség lehet egy **egyetlen belső nézetre**, ahol az **ADMIN** szerepkör (és opcionálisan szűkített módon OFFICE) átlássa a rendszer „egészségét”, a változások történetét és a függőségek stabilitását anélkül, hogy több külső eszközt kellene párhuzamosan követni. A felület **nem helyettesíti** a professzionális APM / log aggregátort éles nagy forgalomnál, de **egy helyre gyűjti** a projekt számára releváns, biztonságosan megjeleníthető jelzőket.
+
+**Cél:**
+
+- **Egy dashboard**, amely összefoglalja: üzemállapot, legutóbbi események, verzió- és változásnapló, függőség- és biztonsági jelzők, valamint kapcsolódó admin információk.
+- **Jogosultság:** alapból csak **ADMIN**; egyes widgetek OFFICE-nak is megjeleníthetők (döntésnapló), de érzékeny adat soha **OFFICE** jogkörrel ne legyen olvasható.
+- **Biztonság:** titkok, API kulcsok, jelszavak, teljes connection string **nem** jelenhet meg; csak státusz (pl. „`AUTH_SECRET` beállítva: igen/nem”), környezet címke (`development` / `staging` / `production`), migráció sorszáma.
+
+**Javasolt modulok / widgetek (összegyűjtött információ):**
+
+1. **Állapot és monitoring**
+   - alkalmazás **verzió** (git commit hash / build id, ha elérhető build-time injektálással),
+   - futási **környezet** és szerver idő (UTC + helyi megjelenítés),
+   - opcionális: utolsó **health check** eredmény (DB, auth, kritikus API),
+   - opcionális: rövid idősávú **hibarát** vagy „utolsó N db 5xx” számláló (aggregált, PII nélkül),
+   - kapcsolódás a §29.3-ban leírt hosszabb távú observability stratégiához (link / „részletek külső toolban”).
+
+2. **History (történet)**
+   - **Audit napló** rövidített streamje (§17, §21): utolsó események szűrhetően (akció típus, entitás, idő),
+   - **Bejelentkezési / session események** összesítése (sikeres / sikertelen kísérlet száma időablakonként; egyedi felhasználó IP-címének megjelenítése GDPR és belső szabály szerint döntendő),
+   - **Tartalomtörténet:** ha van verziózás / publish log, annak utolsó bejegyzései (külön entitás specifikációhoz kötve).
+
+3. **Changelog és kiadások**
+   - a repó **`CHANGELOG.md`** (vagy egyenértékű) beágyazott / linkelt nézete,
+   - **GitHub Releases** vagy tag lista linkje (API-val csak rate limit és token szabályok mellett),
+   - „Utolsó deploy / utolsó merge a mainre” metaadat (CI-ből vagy manuális mező – döntésnapló).
+
+4. **Függőségek és stabilitás**
+   - **npm audit** összegző eredmény (olvasható jelentés: critical/high számláló; részlet export fájlba, nem minden package listázása a UI-on),
+   - **elavult csomagok** jelzése (`npm outdated` vagy Renovate/Dependabot státusz link),
+   - **lockfile** és **Node** verzió kompatibilitás ellenőrzése (dokumentált célértékekhez képest),
+   - **Prisma migráció** állapot: legutóbbi migráció neve, pending migráció figyelmeztetés.
+
+5. **Egyéb, kapcsolódó ötletek (opcionális widgetek)**
+   - **CI/CD állapot:** utolsó GitHub Actions / pipeline futás eredménye (API + badge),
+   - **Feature flag** lista (ha bevezetésre kerül),
+   - **Rate limit** / abuse védelem statisztika (ha van központi számláló),
+   - **Tárhely / média** kvóták (ha van feltöltés),
+   - **Ütemezett feladatok** (cron / queue) utolsó futása és következő időpont,
+   - **Biztonsági fejléc** és TLS / cookie policy rövid státusz (szerveroldali ellenőrzés eredménye),
+   - **i18n:** hiányzó fordítási kulcsok száma buildből (ha automatizálható),
+   - **Hibás belső linkek** ellenőrzés eredménye (ha külön job fut),
+   - **Szezonális díszítés** globális ki/ be kapcsoló állapota (§29.9 összhangban).
+
+**Technikai megvalósítás (irányelvek):**
+
+- Útvonal javaslat: `(internal)/admin/ops` vagy `(internal)/admin/system` – a §23 szerkezettel összeegyeztetendő.
+- Adatforrás: dedikált **read-only** API route-ok (`/api/admin/ops/...`), szerveren aggregálva; cache rövid TTL-lel, hogy ne terhelje feleslegesen a DB-t.
+- **Audit:** minden olyan dashboard-megtekintést, amely érzékeny metaadatot mutat, opcionálisan naplózni (döntés a §24.2 szerint).
+
+**Elfogadási feltételek (javasolt):**
+
+- A dashboard **nem** teszi közzé titkokat és **nem** teszi lehetővé titkok szerkesztését URL-paraméterből.
+- ADMIN-only kritikus widgetek; OFFICE esetén explicit allowlista.
+- Mobil és a11y: a §22 szerint használható (táblázatok, fókusz, kontraszt).
+- Dokumentáció: `docs/architecture.md` vagy külön `docs/ops-dashboard.md` – widgetek listája, adatforrások, frissítési gyakoriság.
+
+**Kapcsolódó fejezetek:** §17, §21, §24, §25 (29), §29.3, §29.7.
+
+---
+
+## 30. Backend architektúra – kötelező ellenőrzőlista
+
+A következő tételek a **szerveroldali** megvalósítás egységességét, biztonságát és üzemeltethetőségét célozzák. **Kötelező** a §27 szerinti kész állapot felé haladva megvalósítani vagy a §24.2 decision logban **írásban elvetni / elhalasztani** határidővel és felelőssel. Sorrend nem kötelezően ez; a függőségeket a fejlesztés során kell ütemezni.
+
+| # | Követelmény |
+|---|----------------|
+| 1 | **Központi permission registry:** `lib/auth/permissions.ts` (vagy egyenértékű SSOT hely); minden jogosultság-kulcs egy helyen definiálva. |
+| 2 | **Role–permission mátrix** és belőle generált / közös **szerveroldali** ellenőrzés (middleware + service réteg), nem csak UI-rejtés. |
+| 3 | **Audit log middleware** (vagy egységes handler) minden **írási** API-művelethez; összhang a §21-gel. |
+| 4 | **Soft delete + restore service** hírekhez, galériához, útmutatókhoz (és azonos minta más tartalom-entitásokra). |
+| 5 | **Egységes status enum registry** a `draft` / `scheduled` / `published` / `archived` / `deleted` életciklusra (Prisma + TS típus szinkron). |
+| 6 | **`pendingApproval` státusz** opcionális review workflow-hoz (ha bekapcsolt, akkor publish csak jóváhagyás után). |
+| 7 | **Központi Zod validációs réteg** minden API route body/query előtt; közös hibaválasz forma. |
+| 8 | **Shared API response factory** egységes siker- és hibaüzenetekre (státuszkód + struktúra). |
+| 9 | **Prisma query helper** réteg ismétlődő `where` / `orderBy` / jogosultság-szűrt lekérdezésekhez. |
+| 10 | **Kategóriakezelés:** polymorphic vagy központi `Category` + modul-specifikus kapcsolat – dokumentált séma (`docs/database.md`). |
+| 11 | **News publish scheduler** háttérfolyamat: `scheduled` → `published` időzítés szerint. |
+| 12 | **Event scheduler** és automatikus státuszváltás (pl. lezárult esemény). |
+| 13 | **Booking conflict detector** service időütközésre (§11 összhang). |
+| 14 | **Booking approve/reject** eseményekhez kötelező **audit trail**. |
+| 15 | **Galéria thumbnail** generálás **queue**-ban (nem request szálban blokkolva). |
+| 16 | **Storage adapter** réteg: `local` / `S3`-kompatibilis absztrakció képfeltöltéshez. |
+| 17 | **Dedikált metadata extractor** képekhez és dokumentumokhoz (EXIF/PDF meta, GDPR szerint). |
+| 18 | **Search indexing service** modulonkénti mapperrel (hír, esemény, galéria, guide). |
+| 19 | **Központi search filter schema** (Zod) news / calendar / gallery / guides végpontokhoz. |
+| 20 | **Search history** autentikált felhasználóknak **szerveroldalon** (nem csak localStorage). |
+| 21 | **KKI kalkulátor** külön **domain service** rétegben (package-szerű `lib/calculator/` vagy `features/calculator/server/`). |
+| 22 | **KKI export endpoint** CSV és/vagy PDF generálással (§12). |
+| 23 | **Office info** időzített tartalomcsere ütemezés szerint (ha van időfüggő blokk). |
+| 24 | **Versioned content snapshots** kritikus tartalmakhoz (visszaállítás döntésnaplóval). |
+| 25 | **Admin ops aggregator** read-only API-k a §29.10 dashboard számára. |
+| 26 | **Health check endpoint** DB + auth + storage státusszal (PII nélkül). |
+| 27 | **Structured server logging** PII-maszkolással (§29.3). |
+| 28 | **Failed login rate limiting** és lockout mechanizmus. |
+| 29 | **CSRF protection** minden state-changing végponton (ha az architektúra megköveteli). |
+| 30 | **Session anomaly logging** admin megfigyelésre (szokatlan user-agent, hely, gyors ismétlődés – szabálykönyv). |
+| 31 | **Translation key coverage checker** build lépésben (hiányzó kulcs → figyelmeztetés vagy hiba). |
+| 32 | **Missing category / reference integrity checker** cron vagy scheduled job. |
+| 33 | **Broken internal links checker** guides és hírek HTML/markdown tartalmára. |
+| 34 | **Canonical metadata generator service** nyelvenként (`hu` / `en`). |
+| 35 | **Sitemap és robots** dinamikus generálása tartalomstátusz alapján. |
+| 36 | **ICS export** naptár eseményekhez és szűrt listákhoz. |
+| 37 | **Social feed connector** adapter: Instagram/Facebook **stub** + későbbi **éles provider** ugyanazon interfészen. |
+| 38 | **Feature flag service** admin-only kezeléssel és szerveroldali olvasással. |
+| 39 | **Dependency audit** eredmények backend összesítése az ops dashboardnak (§29.10). |
+| 40 | **DB seed rendszer** szerepkörökkel, demo kategóriákkal és teszt tartalmakkal (`prisma/seed.ts` + dokumentált újrafuttathatóság). |
+
+**Kapcsolódó fejezetek:** §2.1, §11–§14, §18–§21, §24, §25, §27, §29.3, §29.6, §29.10.
+
+---
+
+## 31. Frontend architektúra és UX – kötelező ellenőrzőlista
+
+A következő tételek a **kliensoldali** élmény, a komponens-architektúra és a §22 akadálymentesség irányába mutatnak. **Kötelező** a §27 szerinti kész állapotig megvalósítani vagy a §24.2-ben rögzített módon módosítani.
+
+| # | Követelmény |
+|---|----------------|
+| 1 | **Landing hero:** nagy, karakteres főcím; **HÖK logó** fókuszpontja a **design-pack** (§32.2) eszközeivel. |
+| 2 | **Scroll után** finoman megjelenő navbar a landinghez. |
+| 3 | **2×3-as modulgrid** animált belépéssel a főoldalon (mérsékelt motion, §22). |
+| 4 | **Központi page shell** minden belső oldalhoz (egységes padding, max-width, fejléc-réteg). |
+| 5 | **Egységes „Ablak” modal** rendszer minden CRUD művelethez (§7 összhang). |
+| 6 | **Shared top actions** sáv: téma, nyelv, auth egy helyen. |
+| 7 | **Globális command-style kereső** a navban (§29.5 és §30.18–20 kiegészítése). |
+| 8 | **Hírlista:** kártyás és listás nézetváltó. |
+| 9 | **Hír részletek:** sticky meta blokk. |
+| 10 | **Archív timeline** a hírek régebbi tartalmaihoz. |
+| 11 | **Naptár:** három nézet közötti gyors váltó (§11). |
+| 12 | **„Mai nap”** lebegő visszaugró gomb a naptárban. |
+| 13 | **Booking modal** lépésenkénti űrlappal. |
+| 14 | **Eseménykártyák** státusz- és kategóriachipjei. |
+| 15 | **KKI:** sticky summary bar desktopon és mobilon. |
+| 16 | **Ghost mode** halvány, de egyértelmű vizuális jelöléssel. |
+| 17 | **Összecsukható félévblokkok** progress-summary-val. |
+| 18 | **KKI** inline trend vizualizáció (visszafogott chart). |
+| 19 | **Galéria:** masonry-szerű grid vagy szabályos vizuális rács. |
+| 20 | **Galéria folder view** breadcrumb navigációval. |
+| 21 | **Galéria timeline view** képi idővonal markerrel. |
+| 22 | **Guides:** docs-sidebar + tartalompanel felosztás. |
+| 23 | **Letölthető fájlok** egységes **file-card** komponens. |
+| 24 | **About Us:** szervezeti térkép kártyás tagolással. |
+| 25 | **„Kihez forduljak?”** döntéssegítő blokk az About oldalon. |
+| 26 | **Office:** status-first dashboard (nyitva/zárva, bent lévők, ügyintézés). |
+| 27 | **Admin kezdőlap:** napi teendő-összefoglaló kártyák. |
+| 28 | **Audit viewer** szűrőkkel és esemény-badge-ekkel. |
+| 29 | **Kategóriakezelő UI** drag-and-drop sorrendezéssel (a11y alternatívával). |
+| 30 | **Tartalomkezelő:** mobilbarát kártya + drawer nézet táblák mellett/alatt. |
+| 31 | **Globális skeleton** komponensek minden listás felülethez. |
+| 32 | **Empty state-ek** cselekvésorientált CTA-kkal. |
+| 33 | **Error state-ek** kontextusfüggő visszaút és **retry** gombbal. |
+| 34 | **Back-to-top** gomb opcionális progress-indikátorral. |
+| 35 | **Accessibility-first fókuszstílusok** minden interaktív elemhez. |
+| 36 | **Mobil menü** teljes képernyős, nem csak összezsugorított desktop nav (§9, §22). |
+| 37 | **Nyelvváltás** finom, nem zavaró UI-átmenettel (§32.3). |
+| 38 | **Toast** rendszer prioritás szerinti vizuális súlyozással. |
+| 39 | **Search filter pill-ek** shared komponensként. |
+| 40 | **Ops dashboard** widget-alapú, opcionálisan átrendezhető modulokkal (§29.10). |
+
+**Kapcsolódó fejezetek:** §4, §7–§17, §20, §22, §25, §27, §29.5, §29.10, §32.
+
+---
+
+## 32. Design rendszer, brand és vizuális minőség – kötelező ellenőrzőlista
+
+### 32.1 Design tokenek és komponensnyelv (40 pont)
+
+| # | Követelmény |
+|---|----------------|
+| 1 | **PTEMIK brand blue** az elsődleges akcent; ne legyen több „versengő” fő brand szín. |
+| 2 | **Light és dark surface hierarchy** 4–5 egyértelmű réteggel (külön tervezett dark, nem invertált light). |
+| 3 | **Glassmorphism** csak visszafogott panel-kiemelésekhez. |
+| 4 | **Kártyaorientált layout** az egész platformon. |
+| 5 | **Központi spacing scale** 4px-alapú ritmussal. |
+| 6 | **Radius tokenek:** sm / md / lg / xl. |
+| 7 | **Shadow tokenek** melegített, finom rétegzéssel. |
+| 8 | **Display és body typography** szerepek szigorú szétválasztása. |
+| 9 | **Modern sans-serif** fő betűcsalád; karakteres heading súlyok. |
+| 10 | **Nagy, tiszta hero headline-ok** a public felületeken. |
+| 11 | **Internal** felületen visszafogottabb, dashboard-szerű tipográfiai skála. |
+| 12 | **Badge-rendszer** státusz- és kategóriajelöléshez. |
+| 13 | **Surface + border szabályok** SSOT-ban (`design-tokens` / dokumentáció). |
+| 14 | **Gombok:** primary, secondary, ghost, danger variánsok. |
+| 15 | **Input:** egységes magasság és label-rendszer. |
+| 16 | **Ikonok:** következetes stroke-szélesség. |
+| 17 | **Landing:** nagyobb vizuális ritmus; belső oldalak: kompaktabb grid. |
+| 18 | **Scroll-aktivált navbar** enyhe blur háttérrel. |
+| 19 | **Modulgrid kártyák:** ikon + rövid leírás + akciósor. |
+| 20 | **Hír kártyák:** dátum és státusz vizuális elkülönítése. |
+| 21 | **Naptár kategóriák:** fix színkód-rendszer. |
+| 22 | **KKI summary panel:** kiemelt, de nem harsány kontraszt. |
+| 23 | **Galéria:** kép dominancia + diszkrét meta overlay. |
+| 24 | **Guides:** editorial + dashboard hibrid vizuális nyelv. |
+| 25 | **About profilkártyák:** egységes portrékeret és szerepkörjelölés. |
+| 26 | **Office státuszblokkok:** pillantásra értelmezhető ikonrendszer. |
+| 27 | **Admin:** sűrűbb, de levegős adatvizuális elrendezés. |
+| 28 | **Toast:** típus jelezhető szín mellett **forma + ikon + címhierarchiával** is (nem csak szín). |
+| 29 | **Empty state** illusztrációk egyszerű geometrikus stílusban. |
+| 30 | **Error state** nyugodt, hivatalos vizuális hangnem. |
+| 31 | **Breadcrumb:** alacsony kontrasztú, de jól tapintható elválasztók. |
+| 32 | **Dark mode:** külön tervezett felület (§22 villogásmentesség). |
+| 33 | **Mobil:** nagy, hüvelykujj-barát érintési zónák. |
+| 34 | **A11y fókuszgyűrű** brand blue árnyalatban, jó kontraszttal. |
+| 35 | **Modal overlay:** puha, nem túl sötét, de egyértelmű. |
+| 36 | **Search filter chip-ek:** kompaktak, gyorsan skennelhetők. |
+| 37 | **Skeletonok** a tényleges layout formáját kövessék. |
+| 38 | **Ops dashboard:** widgetenként külön vizuális súly a kritikus állapotoknak. |
+| 39 | **Szezonális díszítés** (§29.9) külön token- és effekt-rétegként kapcsolható. |
+| 40 | Összhatás: **„modern egyetemi digitális platform”**, ne klasszikus intézményi portál-sablon. |
+
+### 32.2 HÖK design-pack (logók és brand eszközök)
+
+- A **`design-pack/`** mappa a repo gyökerében található; ide kell elhelyezni a HÖK **logócsomagot** minden kivitelben (színes, fehér, fekete vázlat, **dark mode**-hoz optimalizált változatok, szükség szerint SVG és raster, vízjel nélküli és nyomdai exportok – a csomag tartalmát a HÖK brand útmutató szerint).
+- A mappában található **különböző logóvariációk** felhasználása **ízlés szerint, kontextushoz igazítva** történjen: landing/hero részen karakteresebb verzió, navigációban kompakt és gyorsan felismerhető változat, láblécben visszafogott kivitel, admin felületen tiszta és adatbarát megjelenés.
+- A `design-pack/README.md` rögzíti a fájlnevek konvencióját és a **használati szabályokat** (minimum méret, térköz a logó körül, tiltott háttér).
+- A kódban és a `public/` alatt a Next.js **Image** / statikus kiszolgálás szabályai szerint kell hivatkozni (példa: kiválasztott exportok másolása `public/brand/` alá build előtt vagy dokumentált deploy lépésben – részletek `docs/design-pack.md`).
+
+### 32.3 Kötelező vizuális minőség („fancy” UI) és átmenetek
+
+- A **végső, production** állapotban a nyilvános és a belső felület **magas minőségű, polírozott („fancy”)** megjelenésű legyen: finom **hover/focus** állapotok, **ésszerű mértékű** belépő animációk, **szemnek kellemes átmenetek** (CSS `transition` / motion tokenek), **nem** zavaró villogás vagy túlzott effekt (§22).
+- **Dark módban** külön ellenőrizendő: logók olvashatósága, árnyékok és surface kontrasztok, átmenetek **nem** okoznak hirtelen fényerő-ugrást.
+- A **design-pack** logói és színei **kreatívan** illeszkedjenek (hero, nav, lábléc, admin fejléc), de a §2.1 SSOT és a HÖK brand README szabályai mindig elsőbbséget élveznek.
+- **Elfogadás:** design system proof (§4) + §31 fő UX pontok + e fejezet; stakeholder által aláírt „UI jóváhagyás” opcionálisan a `docs/progress-log.md`-ben.
+
+**Kapcsolódó fejezetek:** §2.1, §4, §9, §20, §22, §24, §27, §29.9, §31.

@@ -1,7 +1,21 @@
 /**
- * @file Office tájékoztató – `/office` (publikus; statikus rich layout)
+ * @file Office – `/office` (§16)
  */
-import { Card, SectionHeader } from '@/components/ui/Core';
+import type { Metadata } from 'next';
+import { AllModulesStack } from '@/components/landing/AllModulesStack';
+import { PublicPageShell } from '@/components/layout/PublicPageShell';
+import { buildPageMetadata } from '@/lib/seo';
+
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Office',
+  description: 'Irodai nyitvatartás, ügyintézési státusz és aktuális hallgatói információk.',
+  path: '/office',
+});
+
 export default function OfficePage() {
-  return <div className="app-shell section"><SectionHeader eyebrow="Office" title="Részletesebb irodai információs oldal" text="Az Office oldal vizuálisan gazdagabb lett, hangsúlyos nyitvatartási és jelenléti blokkokkal, valamint jobban elkülönülő információs kártyákkal." /><div className="content-grid-rich"><div className="stack"><Card strong><h3>Aktuális nyitvatartás</h3><p style={{ color: 'var(--muted)' }}>Hétfő–csütörtök 10:00–16:00, pénteken ügyintézés előzetes egyeztetéssel.</p></Card><div className="grid-2"><Card><h4>Bent tartózkodók</h4><p style={{ color: 'var(--muted)' }}>Valós idejű vagy később automatizálható jelenléti blokk számára előkészített felület.</p></Card><Card><h4>Ügyfélfogadás</h4><p style={{ color: 'var(--muted)' }}>A hallgatói ügyintézés állapota és rövid tájékoztatók külön kártyában jelennek meg.</p></Card></div></div><div className="feature-list"><div className="feature-item"><strong>NFC lehetőség</strong><p style={{ color: 'var(--muted)' }}>Később csatlakoztatható automatizált jelenlétkezelési irányként megmarad.</p></div><div className="feature-item"><strong>Gyors információk</strong><p style={{ color: 'var(--muted)' }}>A legfontosabb ügyintézési tudnivalók külön, könnyen áttekinthető blokkban jelennek meg.</p></div></div></div></div>;
+  return (
+    <PublicPageShell>
+      <AllModulesStack primary="office" />
+    </PublicPageShell>
+  );
 }

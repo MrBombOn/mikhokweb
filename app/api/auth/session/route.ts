@@ -10,6 +10,7 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { verifySessionToken, SESSION_COOKIE } from '@/lib/auth/session';
+import { enforceSameOrigin } from '@/lib/security/csrf';
 
 const LEGACY_GATE = 'hok_admin_gate';
 
@@ -37,7 +38,10 @@ export async function GET() {
   return NextResponse.json({ user });
 }
 
-export async function DELETE() {
+export async function DELETE(request: Request) {
+  const csrf = enforceSameOrigin(request);
+  if (csrf) return csrf;
+
   const res = NextResponse.json({ ok: true });
   res.cookies.delete(SESSION_COOKIE);
   res.cookies.delete(LEGACY_GATE);

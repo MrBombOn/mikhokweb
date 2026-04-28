@@ -1,6 +1,7 @@
 /**
- * SSOT: színek, radius, shadow, átmenet – light/dark.
- * Ne duplikáld ezeket inline stílusként; új token itt, majd var(--token) a CSS-ben.
+ * SSOT: színek, radius, shadow, spacing, motion, layout – light/dark.
+ * Új vizuális érték: itt token, majd `var(--token)` a CSS-ben vagy `style={{ gap: 'var(--space-4)' }}`.
+ * Részletes szerződés: `docs/design-system.md` (D1, §32.1).
  */
 :root {
   --bg: #eef4ff;
@@ -19,13 +20,69 @@
   --pink: #ff7dbc;
   --purple: #9e8dff;
   --teal: #3ec8c8;
+
+  /* Radius skála (§32.1) */
+  --radius-xs: 10px;
   --radius-sm: 14px;
   --radius-md: 20px;
-  --radius-lg: 30px;
+  --radius-lg: 28px;
+  --radius-xl: 32px;
+  --radius-full: 9999px;
+
+  /* Árnyék skála */
+  --shadow-xs: 0 4px 14px rgba(26, 71, 168, 0.06);
   --shadow-sm: 0 10px 26px rgba(26, 71, 168, 0.08);
   --shadow-md: 0 18px 44px rgba(26, 71, 168, 0.12);
   --shadow-lg: 0 28px 70px rgba(26, 71, 168, 0.14);
-  --transition: 180ms ease;
+  --shadow-xl: 0 36px 88px rgba(26, 71, 168, 0.16);
+
+  /* Spacing: 4px alap */
+  --space-0: 0;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 28px;
+  --space-8: 32px;
+  --space-9: 36px;
+  --space-10: 40px;
+  --space-11: 44px;
+  --space-12: 48px;
+  --space-13: 52px;
+  --space-14: 56px;
+  --space-15: 60px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-25: 100px;
+
+  /* Motion (§32.1 + D4 előkészítés) */
+  --motion-duration-instant: 0ms;
+  --motion-duration-fast: 120ms;
+  --motion-duration-base: 180ms;
+  --motion-duration-slow: 280ms;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --transition: var(--motion-duration-base) var(--ease-standard);
+  /** Belépő / stagger (D4) */
+  --motion-enter-translate-y: 14px;
+  --motion-stagger-delay: 52ms;
+
+  /* Layout / érintés */
+  --layout-max-width: 1280px;
+  --layout-shell-gutter: 24px;
+  --layout-main-pad-bottom: var(--space-25);
+  --layout-section-padding-y: var(--space-8);
+  --layout-landing-scroll-offset: 110px;
+  --layout-landing-news-section-pt: 42px;
+  --layout-landing-news-surface-pad: 28px;
+  --layout-fab-edge: 22px;
+  --touch-target-min: 44px;
+  --touch-target-fab: 56px;
+
+  --font-body: Arial, Helvetica, sans-serif;
 }
 
 html[data-theme='dark'] {
@@ -39,7 +96,9 @@ html[data-theme='dark'] {
   --primary: #7ea7ff;
   --primary-strong: #5b88f0;
   --accent: rgba(126, 167, 255, 0.13);
+  --shadow-xs: 0 4px 14px rgba(0, 0, 0, 0.2);
   --shadow-sm: 0 10px 26px rgba(0, 0, 0, 0.22);
   --shadow-md: 0 18px 44px rgba(0, 0, 0, 0.28);
   --shadow-lg: 0 28px 70px rgba(0, 0, 0, 0.34);
+  --shadow-xl: 0 36px 88px rgba(0, 0, 0, 0.42);
 }

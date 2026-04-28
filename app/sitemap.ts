@@ -14,9 +14,10 @@
  * kivehetők a sitemap-ból, ha nem kell indexelés.
  */
 import type { MetadataRoute } from 'next';
+import { getBaseUrl } from '@/lib/seo';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://example.invalid';
+  const base = getBaseUrl();
   const paths = [
     '',
     '/about',
@@ -26,15 +27,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/guides',
     '/news',
     '/office',
-    '/admin',
-    '/admin/users',
-    '/admin/categories',
-    '/admin/content',
-    '/admin/audit',
-    '/admin/office',
   ];
   return paths.map((path) => ({
     url: `${base}${path || '/'}`,
     lastModified: new Date(),
+    changeFrequency: path === '' ? 'daily' : 'weekly',
+    priority: path === '' ? 1 : 0.7,
   }));
 }

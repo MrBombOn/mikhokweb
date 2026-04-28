@@ -6,27 +6,18 @@
  * módban vagyunk, és egy gombbal vissza lehet menni a főoldalra.
  */
 import Link from 'next/link';
+import { BrandMark } from '@/components/brand/BrandMark';
 
 export default function InternalLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="section" style={{ paddingTop: 12 }}>
-      <header
-        className="card"
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 12,
-          padding: '14px 18px',
-          marginBottom: 20,
-        }}
-      >
-        <div>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--primary)' }}>
-            Belső zóna
+    <div className="section internal-layout-root">
+      <header className="card internal-layout-header">
+        <div className="internal-layout-header-brand">
+          <BrandMark variant="internal" />
+          <div>
+            <div className="internal-layout-eyebrow">Belső zóna</div>
+            <div className="internal-layout-title">Admin</div>
           </div>
-          <div style={{ fontWeight: 800, fontSize: 18 }}>Admin</div>
         </div>
         <Link href="/" className="btn btn-secondary">
           Vissza a publikus oldalra

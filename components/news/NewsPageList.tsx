@@ -1,51 +1,92 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import type { NewsItem } from '@/types/news';
+import { useCallback, useEffect, useState } from 'react';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { ErrorState } from '@/components/ui/ErrorState';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { fetchNewsList } from '@/features/news/client';
+import type { NewsItem } from '@/features/news/types';
 
-async function fetchPublishedNews(): Promise<NewsItem[]> {
-  const r = await fetch('/api/news', { credentials: 'include' });
-  if (!r.ok) return [];
-  const data = (await r.json()) as { items?: NewsItem[] };
-  return Array.isArray(data.items) ? data.items : [];
+function sourceChip(lang: 'hu' | 'en', source: NewsItem['source']) {
+  const hu = { internal: 'Belső', facebook: 'Facebook', instagram: 'Instagram' } as const;
+  const en = { internal: 'Internal', facebook: 'Facebook', instagram: 'Instagram' } as const;
+  return lang === 'hu' ? hu[source] : en[source];
 }
 
 export function NewsPageList({ lang }: { lang: 'hu' | 'en' }) {
   const [items, setItems] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
-  useEffect(() => {
-    let c = false;
-    void fetchPublishedNews().then((list) => {
-      if (!c) {
-        setItems(list);
-        setLoading(false);
-      }
-    });
-    return () => {
-      c = true;
-    };
+  const load = useCallback(async () => {
+    setLoading(true);
+    setLoadError(false);
+    const list = await fetchNewsList();
+    if (list === null) {
+      setLoadError(true);
+      setItems([]);
+    } else {
+      setLoadError(false);
+      setItems(list);
+    }
+    setLoading(false);
   }, []);
 
+  useEffect(() => {
+    void load();
+  }, [load]);
+
   if (loading) {
-    return <p style={{ color: 'var(--muted)' }}>{lang === 'hu' ? 'Betöltés…' : 'Loading…'}</p>;
+    return <Skeleton variant="newsList" />;
+  }
+
+  if (loadError) {
+    return (
+      <ErrorState
+        title={lang === 'hu' ? 'Betöltési hiba' : 'Load error'}
+        message={
+          lang === 'hu'
+            ? 'A hírek nem tölthetők be. Ellenőrizd a hálózatot, majd próbáld újra.'
+            : 'News could not be loaded. Check your connection and try again.'
+        }
+        onRetry={() => void load()}
+        retryLabel={lang === 'hu' ? 'Újra' : 'Retry'}
+      />
+    );
   }
 
   if (!items.length) {
-    return <p style={{ color: 'var(--muted)' }}>{lang === 'hu' ? 'Jelenleg nincs közzétett hír.' : 'No published news yet.'}</p>;
+    return (
+      <EmptyState
+        title={lang === 'hu' ? 'Nincs közzétett hír' : 'No published news yet'}
+        description={
+          lang === 'hu'
+            ? 'Amint megjelenik tartalom, itt fogod látni a listát.'
+            : 'When content is published, it will appear here.'
+        }
+      />
+    );
   }
 
   return (
-    <ul className="stack" style={{ listStyle: 'none', padding: 0, margin: 0, gap: 16 }}>
+    <ul className="stack news-page-list" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
       {items.map((item) => (
-        <li key={item.id} className="card" style={{ padding: 20, borderRadius: 16 }}>
-          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
-            <span className="badge">{item.category}</span>
-            <span className="badge">{item.date}</span>
+        <li key={item.id} className="card news-page-card">
+          <div className="news-page-card-meta">
+            <time className="news-pub-date" dateTime={item.date}>
+              {item.date}
+            </time>
+            <div className="news-meta-chips">
+              {item.pinned ? (
+                <span className="badge news-pinned-badge">{lang === 'hu' ? 'Kiemelt' : 'Pinned'}</span>
+              ) : null}
+              <span className="badge">{item.category}</span>
+              <span className={`badge news-source-badge news-source-badge--${item.source}`}>{sourceChip(lang, item.source)}</span>
+            </div>
           </div>
-          <h3 style={{ marginTop: 0 }}>{lang === 'hu' ? item.titleHu : item.titleEn}</h3>
-          <p style={{ color: 'var(--muted)', lineHeight: 1.65 }}>{lang === 'hu' ? item.textHu : item.textEn}</p>
-          <div style={{ color: 'var(--muted)', fontSize: 14 }}>{item.author}</div>
+          <h3 className="news-page-card-title">{lang === 'hu' ? item.titleHu : item.titleEn}</h3>
+          <p className="news-page-card-body">{lang === 'hu' ? item.textHu : item.textEn}</p>
+          <div className="news-page-card-author">{item.author}</div>
         </li>
       ))}
     </ul>

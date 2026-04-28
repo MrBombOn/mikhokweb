@@ -26,7 +26,6 @@ export const landingCards = [
   { href: '/gallery', color: 'linear-gradient(135deg,#7c49ff,#a06cff)', titleHu: 'Galéria', titleEn: 'Gallery', textHu: 'Mappák, nézetek, feltöltés.', textEn: 'Folders, views and upload.' },
   { href: '/guides', color: 'linear-gradient(135deg,#da7d14,#f2a93c)', titleHu: 'Útmutatók', titleEn: 'Guides', textHu: 'Dokumentumok és segédanyagok.', textEn: 'Documents and support materials.' },
   { href: '/about', color: 'linear-gradient(135deg,#d24b5f,#f07590)', titleHu: 'About Us', titleEn: 'About Us', textHu: 'A HÖK felépítése és tagjai.', textEn: 'Structure and members of the union.' },
-  { href: '/office', color: 'linear-gradient(135deg,#305f9f,#4b8de0)', titleHu: 'Office', titleEn: 'Office', textHu: 'Nyitvatartás és ügyintézés.', textEn: 'Office hours and service info.' },
 ] as const;
 
 /** Demo hírsor – `LandingNews` és hír modul prototípusok. */

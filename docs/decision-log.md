@@ -69,6 +69,58 @@ Fontos technikai és design döntések (master spec §24.2). Új bejegyzésnél 
 
 ---
 
+## D-2026-04-28-006 – CSRF stratégia első körben
+
+| Mező | Tartalom |
+|------|----------|
+| **Téma** | Hogyan védekezzünk CSRF ellen cookie-auth API-knál |
+| **Alternatívák** | Csak SameSite cookie; teljes token-alapú CSRF minden formhoz; origin/referer ellenőrzés + SameSite |
+| **Döntés** | **Origin/referer guard** (`enforceSameOrigin`) a state-changing, cookie-auth route-okra; SameSite/Lax cookie marad; tokenes CSRF későbbi körben mérlegelendő |
+| **Indoklás** | Gyorsan és konzisztensen bevezethető védelem minimális UI-változtatással; böngészős cross-site POST/PATCH/DELETE támadásokat csökkenti |
+| **Roadmap-hatás** | Fázis 13 gyors hardening; következő körben centralizált middleware / tokenes kiterjesztés |
+| **Érintett fájlok** | `lib/security/csrf.ts`, több `app/api/**/route.ts`, `docs/security-audit.md` |
+
+---
+
+## D-2026-04-28-007 – Globális keresés architektúra (Fázis 20)
+
+| Mező | Tartalom |
+|------|----------|
+| **Téma** | Központi keresőindex vs modul-API aggregáció |
+| **Alternatívák** | Dedikált kereső index/tábla; kliens oldali modulonkénti aggregáció |
+| **Döntés** | Első körben **kliens aggregáció** a meglévő publikus API-kon (`/api/news`, `/api/events`, `/api/guides`) |
+| **Indoklás** | Gyors bevezetés schema/migráció nélkül; meglévő SSOT API-k újrahasználata; később indexelt backend keresőre migrálható |
+| **Roadmap-hatás** | Fázis 20 gyors értékadás; nagyobb adatmennyiségnél dedikált index/service szükséges |
+| **Érintett fájlok** | `app/(public)/search/*`, `docs/search-rules.md`, `components/layout/Navbar.tsx` |
+
+---
+
+## D-2026-04-28-008 – Mobil menü: háttér görgetés tiltása
+
+| Mező | Tartalom |
+|------|----------|
+| **Téma** | Nyitott mobil nav panel alatt a dokumentum görgetése |
+| **Alternatívák** | Csak fókusz-trap, görgetés szabadon; `overflow: hidden` a `html`+`body`-n; teljes képernyős overlay + lock |
+| **Döntés** | **`document.documentElement` és `document.body` `overflow: hidden`** a panel nyitva léte alatt; panel bezárásakor visszaállítás a korábbi inline értékre |
+| **Indoklás** | D5 roadmap „scroll lock opció”; egyszerű, iOS/desktop között jól ismert minta; overlay nélkül is csökken a véletlen háttér-görgetés |
+| **Roadmap-hatás** | D5 elfogadás; modálok későbbi döntése külön bejegyzésben |
+| **Érintett fájlok** | `components/layout/Navbar.tsx` |
+
+---
+
+## D-2026-04-28-009 – D7: `features/*` modulok kiterjesztése és sorrend
+
+| Mező | Tartalom |
+|------|----------|
+| **Téma** | Mely tartalmi modulok kerüljenek `features/` alá a `news` mintához igazítva |
+| **Alternatívák** | Csak galéria; csak naptár; minden publikus CRUD modul egyszerre |
+| **Döntés** | **Sorrend:** `gallery` → `guides` → `events` (naptár) → `about` → `office`. Mindegyikhez `features/<modul>/server.ts` (Prisma + DTO mapper), az `app/api/.../route.ts` handlerek **vékonyak**: auth + Zod + `enforceSameOrigin`, majd a szerver függvény hívása. A Zod sémák maradnak `lib/validation/*` (D7 első kör); későbbi kör opcionálisan `features/<modul>/schema.ts` mint a híreknél. |
+| **Indoklás** | Egységes SSOT a domain logikához; route fájlok olvashatók; a roadmap D7 elfogadása (`api.md` + build) teljesül |
+| **Roadmap-hatás** | D7 mérföldkövek; D8 előtt további modulok (pl. `bookings`) külön döntésben |
+| **Érintett fájlok** | `features/gallery/server.ts`, `features/guides/server.ts`, `features/events/server.ts`, `features/about/server.ts`, `features/office/server.ts`, érintett `app/api/**/route.ts`, `docs/api.md` |
+
+---
+
 ### Sablon (másolás új döntéshez)
 
 ```

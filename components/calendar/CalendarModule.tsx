@@ -12,6 +12,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useApp } from '@/components/layout/AppProvider';
 import { Card, SectionHeader } from '@/components/ui/Core';
 import { bookingRequests, calendarItems } from '@/lib/content';
+import { canUseDemoFallback } from '@/lib/services/content-fetch-policy';
 import type { CalendarView } from '@/types';
 import type { CalendarEventItem, GymBookingItem } from '@/types/calendar';
 
@@ -112,9 +113,9 @@ export function CalendarModule() {
   const reloadFromApi = useCallback(async () => {
     const [ev, bk] = await Promise.all([fetchEventsList(), fetchBookingsList()]);
     if (ev) setEvents(ev);
-    else setEvents(fallbackEvents());
+    else setEvents(canUseDemoFallback() ? fallbackEvents() : []);
     if (bk) setRequests(bk);
-    else setRequests(fallbackBookings());
+    else setRequests(canUseDemoFallback() ? fallbackBookings() : []);
   }, []);
 
   useEffect(() => {
@@ -494,7 +495,7 @@ ${item.location}`,
               <input className="input" type="time" value={form.start} onChange={(e) => setForm((p) => ({ ...p, start: e.target.value }))} />
               <input className="input" type="time" value={form.end} onChange={(e) => setForm((p) => ({ ...p, end: e.target.value }))} />
             </div>
-            <textarea className="input" style={{ minHeight: 120 }} placeholder={lang === 'hu' ? 'Edzés vagy program célja' : 'Purpose of the training or event'} value={form.purpose} onChange={(e) => setForm((p) => ({ ...p, purpose: e.target.value }))} />
+            <textarea className="input" placeholder={lang === 'hu' ? 'Edzés vagy program célja' : 'Purpose of the training or event'} value={form.purpose} onChange={(e) => setForm((p) => ({ ...p, purpose: e.target.value }))} />
             {bookingConflicts.length ? (
               <div className="booking-conflict-box">
                 <strong>{lang === 'hu' ? 'Lehetséges ütközés' : 'Possible conflict'}</strong>

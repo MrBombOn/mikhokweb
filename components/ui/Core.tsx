@@ -16,9 +16,18 @@ export function PageShell({ children }: { children: ReactNode }) {
  * Kártya konténer – opcionálisan erősebb háttér (`card-strong`).
  * @param strong – vizuális hangsúly (landing / rich layout)
  */
-export function Card({ children, strong = false }: { children: ReactNode; strong?: boolean }) {
+export function Card({
+  children,
+  strong = false,
+  className,
+}: {
+  children: ReactNode;
+  strong?: boolean;
+  className?: string;
+}) {
+  const classes = ['card', 'card-pad', strong ? 'card-strong' : '', className].filter(Boolean).join(' ');
   return (
-    <div className={`card ${strong ? 'card-strong' : ''}`} style={{ padding: 20 }}>
+    <div className={classes}>
       {children}
     </div>
   );
@@ -30,7 +39,7 @@ export function Card({ children, strong = false }: { children: ReactNode; strong
  */
 export function SectionHeader({ eyebrow, title, text }: { eyebrow: string; title: string; text: string }) {
   return (
-    <div className="section-head" style={{ marginBottom: 18 }}>
+    <div className="section-head section-head-spaced">
       <small>{eyebrow}</small>
       <h2>{title}</h2>
       <p>{text}</p>

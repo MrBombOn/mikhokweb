@@ -2,48 +2,46 @@
  * @file REST: egy naptáresemény GET / PATCH / DELETE (soft delete, OFFICE/ADMIN íráshoz).
  */
 import { NextResponse } from 'next/server';
-import type { Prisma } from '@prisma/client';
-import { prisma } from '@/lib/db';
 import { canManageNews, getCurrentUser } from '@/lib/auth/current-user';
-import { calendarEventToItem } from '@/lib/mappers/calendar';
+import {
+  getCalendarEventDto,
+  parseEventId,
+  patchCalendarEvent,
+  softDeleteCalendarEvent,
+} from '@/features/events/server';
 import { patchEventSchema } from '@/lib/validation/events';
+import { enforceSameOrigin } from '@/lib/security/csrf';
+import { writeAudit } from '@/lib/audit/write-audit';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
-function parseId(raw: string): number | null {
-  const n = Number(raw);
-  return Number.isInteger(n) && n > 0 ? n : null;
-}
-
 export async function GET(_request: Request, context: RouteContext) {
   const { id: raw } = await context.params;
-  const id = parseId(raw);
+  const id = parseEventId(raw);
   if (id == null) {
     return NextResponse.json({ error: 'Érvénytelen azonosító.' }, { status: 400 });
   }
 
   const user = await getCurrentUser();
-  const row = await prisma.calendarEvent.findUnique({ where: { id } });
-  if (!row || row.status === 'deleted') {
-    return NextResponse.json({ error: 'Nem található.' }, { status: 404 });
+  const result = await getCalendarEventDto(id, user?.role);
+  if (!result.ok) {
+    return NextResponse.json({ error: 'Nem található.' }, { status: result.status });
   }
 
-  const guest = !user || !canManageNews(user.role);
-  if (guest && row.status !== 'published') {
-    return NextResponse.json({ error: 'Nem található.' }, { status: 404 });
-  }
-
-  return NextResponse.json({ item: calendarEventToItem(row) });
+  return NextResponse.json({ item: result.item });
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
+  const csrf = enforceSameOrigin(request);
+  if (csrf) return csrf;
+
   const user = await getCurrentUser();
   if (!user || !canManageNews(user.role)) {
     return NextResponse.json({ error: 'Nincs jogosultság.' }, { status: 403 });
   }
 
   const { id: raw } = await context.params;
-  const id = parseId(raw);
+  const id = parseEventId(raw);
   if (id == null) {
     return NextResponse.json({ error: 'Érvénytelen azonosító.' }, { status: 400 });
   }
@@ -60,54 +58,45 @@ export async function PATCH(request: Request, context: RouteContext) {
     return NextResponse.json({ error: 'Validációs hiba', details: parsed.error.flatten() }, { status: 400 });
   }
 
-  const existing = await prisma.calendarEvent.findUnique({ where: { id } });
-  if (!existing || existing.status === 'deleted') {
-    return NextResponse.json({ error: 'Nem található.' }, { status: 404 });
+  const result = await patchCalendarEvent(id, parsed.data);
+  if (!result.ok) {
+    return NextResponse.json({ error: result.error ?? 'Hiba.' }, { status: result.status });
   }
-
-  const p = parsed.data;
-  const updateData: Prisma.CalendarEventUpdateInput = {};
-  if (p.titleHu !== undefined) updateData.titleHu = p.titleHu;
-  if (p.titleEn !== undefined) updateData.titleEn = p.titleEn;
-  if (p.eventDate !== undefined) updateData.eventDate = p.eventDate;
-  if (p.time !== undefined) updateData.time = p.time;
-  if (p.location !== undefined) updateData.location = p.location;
-  if (p.category !== undefined) updateData.category = p.category;
-  if (p.dayLabel !== undefined) updateData.dayLabel = p.dayLabel;
-  if (p.note !== undefined) updateData.note = p.note;
-  if (p.status !== undefined) updateData.status = p.status;
-  if (Object.keys(updateData).length === 0) {
-    return NextResponse.json({ error: 'Nincs frissítendő mező.' }, { status: 400 });
-  }
-
-  const row = await prisma.calendarEvent.update({
-    where: { id },
-    data: updateData,
+  await writeAudit({
+    actor: user,
+    action: 'patch_event',
+    entityType: 'calendar_event',
+    entityId: String(id),
+    details: `fields=${Object.keys(parsed.data).join(',')}`,
   });
 
-  return NextResponse.json({ item: calendarEventToItem(row) });
+  return NextResponse.json({ item: result.item });
 }
 
-export async function DELETE(_request: Request, context: RouteContext) {
+export async function DELETE(request: Request, context: RouteContext) {
+  const csrf = enforceSameOrigin(request);
+  if (csrf) return csrf;
+
   const user = await getCurrentUser();
   if (!user || !canManageNews(user.role)) {
     return NextResponse.json({ error: 'Nincs jogosultság.' }, { status: 403 });
   }
 
   const { id: raw } = await context.params;
-  const id = parseId(raw);
+  const id = parseEventId(raw);
   if (id == null) {
     return NextResponse.json({ error: 'Érvénytelen azonosító.' }, { status: 400 });
   }
 
-  const existing = await prisma.calendarEvent.findUnique({ where: { id } });
-  if (!existing || existing.status === 'deleted') {
-    return NextResponse.json({ error: 'Nem található.' }, { status: 404 });
+  const result = await softDeleteCalendarEvent(id);
+  if (!result.ok) {
+    return NextResponse.json({ error: 'Nem található.' }, { status: result.status });
   }
-
-  await prisma.calendarEvent.update({
-    where: { id },
-    data: { status: 'deleted' },
+  await writeAudit({
+    actor: user,
+    action: 'delete_event',
+    entityType: 'calendar_event',
+    entityId: String(id),
   });
 
   return NextResponse.json({ ok: true });

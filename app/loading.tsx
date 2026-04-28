@@ -12,8 +12,12 @@
  */
 export default function Loading() {
   return (
-    <div className="app-shell section" aria-busy="true" aria-live="polite">
-      <p style={{ color: 'var(--muted)' }}>Betöltés…</p>
+    <div className="app-shell section state-shell" aria-busy="true" aria-live="polite">
+      <div className="card state-card">
+        <p className="state-eyebrow">Betöltés</p>
+        <h2 className="state-title">Kis türelmet</h2>
+        <p className="state-text">Az oldal tartalma éppen frissül, hamarosan megjelenik.</p>
+      </div>
     </div>
   );
 }

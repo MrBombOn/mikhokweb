@@ -1,11 +1,13 @@
-/**
- * @file Naptár oldal – `/calendar`
- *
- * @description
- * Vékony route wrapper: csak `PageShell` + `CalendarModule` (üzleti logika a modulban).
- */
-'use client';
+import type { Metadata } from 'next';
+import { CalendarPageClient } from './CalendarPageClient';
+import { buildPageMetadata } from '@/lib/seo';
 
-import { CalendarModule } from '@/components/calendar/CalendarModule';
-import { PageShell } from '@/components/ui/Core';
-export default function CalendarPage() { return <PageShell><CalendarModule /></PageShell>; }
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Naptár',
+  description: 'Hallgatói események és tornaterem foglalási információk egy naptárfelületen.',
+  path: '/calendar',
+});
+
+export default function CalendarPage() {
+  return <CalendarPageClient />;
+}

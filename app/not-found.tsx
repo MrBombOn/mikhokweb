@@ -9,15 +9,26 @@
  * A `Link` komponens **kliensoldali** navigációt végez a főoldalra (`prefetch` alapértelmezés szerint).
  */
 import Link from 'next/link';
+import { PublicPageShell } from '@/components/layout/PublicPageShell';
 
 export default function NotFound() {
   return (
-    <div className="app-shell section">
-      <h2 style={{ color: 'var(--text)' }}>404 – Az oldal nem található</h2>
-      <p style={{ color: 'var(--muted)' }}>A keresett útvonal nem létezik.</p>
-      <Link href="/" className="btn btn-primary" style={{ marginTop: 16, display: 'inline-block' }}>
-        Vissza a főoldalra
-      </Link>
-    </div>
+    <PublicPageShell>
+      <section className="section state-shell">
+        <div className="card state-card">
+          <p className="state-eyebrow">404</p>
+          <h2 className="state-title">Az oldal nem található</h2>
+          <p className="state-text">A keresett útvonal nem létezik, vagy időközben át lett helyezve.</p>
+          <div className="state-actions">
+            <Link href="/" className="btn btn-primary">
+              Vissza a főoldalra
+            </Link>
+            <Link href="/news" className="btn btn-secondary">
+              Hírek
+            </Link>
+          </div>
+        </div>
+      </section>
+    </PublicPageShell>
   );
 }

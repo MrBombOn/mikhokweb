@@ -24,3 +24,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
 export function canManageNews(role: UserRole): boolean {
   return role === 'OFFICE' || role === 'ADMIN';
 }
+
+export function isAdmin(role: UserRole): boolean {
+  return role === 'ADMIN';
+}

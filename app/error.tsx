@@ -13,14 +13,27 @@
  */
 'use client';
 
+import Link from 'next/link';
+import { PublicPageShell } from '@/components/layout/PublicPageShell';
+
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
-    <div className="app-shell section">
-      <h2 style={{ color: 'var(--text)' }}>Hiba történt</h2>
-      <p style={{ color: 'var(--muted)' }}>{error.message}</p>
-      <button type="button" className="btn btn-primary" style={{ marginTop: 16 }} onClick={() => reset()}>
-        Újra
-      </button>
-    </div>
+    <PublicPageShell>
+      <section className="section state-shell">
+        <div className="card state-card">
+          <p className="state-eyebrow">Rendszerhiba</p>
+          <h2 className="state-title">Valami hiba történt</h2>
+          <p className="state-text">{error.message || 'A művelet jelenleg nem érhető el.'}</p>
+          <div className="state-actions">
+            <button type="button" className="btn btn-primary" onClick={() => reset()}>
+              Újra
+            </button>
+            <Link href="/" className="btn btn-secondary">
+              Főoldal
+            </Link>
+          </div>
+        </div>
+      </section>
+    </PublicPageShell>
   );
 }

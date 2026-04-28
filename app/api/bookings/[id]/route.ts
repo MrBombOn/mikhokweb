@@ -6,6 +6,8 @@ import { prisma } from '@/lib/db';
 import { canManageNews, getCurrentUser } from '@/lib/auth/current-user';
 import { gymBookingToItem } from '@/lib/mappers/calendar';
 import { patchBookingStatusSchema } from '@/lib/validation/bookings';
+import { enforceSameOrigin } from '@/lib/security/csrf';
+import { writeAudit } from '@/lib/audit/write-audit';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -15,6 +17,9 @@ function parseId(raw: string): number | null {
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
+  const csrf = enforceSameOrigin(request);
+  if (csrf) return csrf;
+
   const user = await getCurrentUser();
   if (!user || !canManageNews(user.role)) {
     return NextResponse.json({ error: 'Nincs jogosultság.' }, { status: 403 });
@@ -46,6 +51,13 @@ export async function PATCH(request: Request, context: RouteContext) {
   const row = await prisma.gymBooking.update({
     where: { id },
     data: { status: parsed.data.status },
+  });
+  await writeAudit({
+    actor: user,
+    action: 'patch_booking_status',
+    entityType: 'gym_booking',
+    entityId: String(id),
+    details: `${existing.status}->${parsed.data.status}`,
   });
 
   return NextResponse.json({ item: gymBookingToItem(row) });

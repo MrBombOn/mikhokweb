@@ -9,9 +9,10 @@ A forráskód és a CI a következő repóban van (itt történik a verziókezel
 ## Útmutató a fejlesztéshez
 
 - **Git / klónozás (rövid):** [docs/repository.md](./docs/repository.md)
-- **Kanonikus spec:** [PROJECT_MASTER_SPEC.md](./PROJECT_MASTER_SPEC.md)
-- **Projekt workflow, szerkezet, változások:** [DOCUMENTATION_PROJECT_WORKFLOW.md](./DOCUMENTATION_PROJECT_WORKFLOW.md)
+- **Kanonikus spec (docs belépési pont):** [docs/specification.md](./docs/specification.md)
+- **Projekt workflow (docs belépési pont):** [docs/project-workflow.md](./docs/project-workflow.md)
 - **Haladás / döntések:** [docs/progress-log.md](./docs/progress-log.md), [docs/decision-log.md](./docs/decision-log.md)
+- **Teljes dokumentációs index:** [docs/documentation-index.md](./docs/documentation-index.md)
 
 ## Gyors indítás
 

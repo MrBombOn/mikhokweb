@@ -2,33 +2,29 @@
  * @file REST: egy hír GET / PATCH / DELETE (soft delete, OFFICE/ADMIN íráshoz).
  */
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
 import { canManageNews, getCurrentUser } from '@/lib/auth/current-user';
-import { newsRowToItem } from '@/lib/mappers/news';
-import { patchNewsSchema } from '@/lib/validation/news';
+import { patchNewsSchema } from '@/features/news/schema';
+import { newsRowToItem } from '@/features/news/mapper';
+import { canReadNewsItem, getNewsItemById, parseNewsId, softDeleteNewsItem, updateNewsItem } from '@/features/news/server';
+import { enforceSameOrigin } from '@/lib/security/csrf';
+import { writeAudit } from '@/lib/audit/write-audit';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
-function parseId(raw: string): number | null {
-  const n = Number(raw);
-  return Number.isInteger(n) && n > 0 ? n : null;
-}
-
 export async function GET(_request: Request, context: RouteContext) {
   const { id: raw } = await context.params;
-  const id = parseId(raw);
+  const id = parseNewsId(raw);
   if (id == null) {
     return NextResponse.json({ error: 'Érvénytelen azonosító.' }, { status: 400 });
   }
 
   const user = await getCurrentUser();
-  const row = await prisma.news.findUnique({ where: { id } });
-  if (!row || row.status === 'deleted') {
+  const row = await getNewsItemById(id);
+  if (!row) {
     return NextResponse.json({ error: 'Nem található.' }, { status: 404 });
   }
 
-  const isGuest = !user || !canManageNews(user.role);
-  if (isGuest && row.status !== 'published') {
+  if (!canReadNewsItem(user?.role, row.status)) {
     return NextResponse.json({ error: 'Nem található.' }, { status: 404 });
   }
 
@@ -36,13 +32,16 @@ export async function GET(_request: Request, context: RouteContext) {
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
+  const csrf = enforceSameOrigin(request);
+  if (csrf) return csrf;
+
   const user = await getCurrentUser();
   if (!user || !canManageNews(user.role)) {
     return NextResponse.json({ error: 'Nincs jogosultság.' }, { status: 403 });
   }
 
   const { id: raw } = await context.params;
-  const id = parseId(raw);
+  const id = parseNewsId(raw);
   if (id == null) {
     return NextResponse.json({ error: 'Érvénytelen azonosító.' }, { status: 400 });
   }
@@ -59,55 +58,50 @@ export async function PATCH(request: Request, context: RouteContext) {
     return NextResponse.json({ error: 'Validációs hiba', details: parsed.error.flatten() }, { status: 400 });
   }
 
-  const existing = await prisma.news.findUnique({ where: { id } });
-  if (!existing || existing.status === 'deleted') {
+  const existing = await getNewsItemById(id);
+  if (!existing) {
     return NextResponse.json({ error: 'Nem található.' }, { status: 404 });
   }
 
-  const p = parsed.data;
-  const row = await prisma.news.update({
-    where: { id },
-    data: {
-      ...(p.source !== undefined && { source: p.source }),
-      ...(p.category !== undefined && { category: p.category }),
-      ...(p.status !== undefined && { status: p.status }),
-      ...(p.pinned !== undefined && { pinned: p.pinned }),
-      ...(p.listDate !== undefined && { listDate: p.listDate }),
-      ...(p.titleHu !== undefined && { titleHu: p.titleHu }),
-      ...(p.titleEn !== undefined && { titleEn: p.titleEn }),
-      ...(p.textHu !== undefined && { textHu: p.textHu }),
-      ...(p.textEn !== undefined && { textEn: p.textEn }),
-      ...(p.author !== undefined && { author: p.author }),
-      ...(p.cover !== undefined && { cover: p.cover }),
-      ...(p.hasCover !== undefined && { hasCover: p.hasCover }),
-      ...(p.scheduledFor !== undefined && { scheduledFor: p.scheduledFor }),
-      ...(p.externalUrl !== undefined && { externalUrl: p.externalUrl }),
-    },
+  const row = await updateNewsItem(id, parsed.data);
+  await writeAudit({
+    actor: user,
+    action: 'patch_news',
+    entityType: 'news',
+    entityId: String(id),
+    details: `fields=${Object.keys(parsed.data).join(',')}`,
   });
 
-  return NextResponse.json({ item: newsRowToItem(row) });
+  return NextResponse.json({ item: row });
 }
 
-export async function DELETE(_request: Request, context: RouteContext) {
+export async function DELETE(request: Request, context: RouteContext) {
+  const csrf = enforceSameOrigin(request);
+  if (csrf) return csrf;
+
   const user = await getCurrentUser();
   if (!user || !canManageNews(user.role)) {
     return NextResponse.json({ error: 'Nincs jogosultság.' }, { status: 403 });
   }
 
   const { id: raw } = await context.params;
-  const id = parseId(raw);
+  const id = parseNewsId(raw);
   if (id == null) {
     return NextResponse.json({ error: 'Érvénytelen azonosító.' }, { status: 400 });
   }
 
-  const existing = await prisma.news.findUnique({ where: { id } });
-  if (!existing || existing.status === 'deleted') {
+  const existing = await getNewsItemById(id);
+  if (!existing) {
     return NextResponse.json({ error: 'Nem található.' }, { status: 404 });
   }
 
-  await prisma.news.update({
-    where: { id },
-    data: { status: 'deleted' },
+  await softDeleteNewsItem(id);
+  await writeAudit({
+    actor: user,
+    action: 'delete_news',
+    entityType: 'news',
+    entityId: String(id),
+    details: `status=${existing.status}->deleted`,
   });
 
   return NextResponse.json({ ok: true });

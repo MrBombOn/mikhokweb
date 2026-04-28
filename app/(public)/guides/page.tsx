@@ -1,8 +1,13 @@
-/**
- * @file Útmutatók – `/guides`
- */
-'use client';
+import type { Metadata } from 'next';
+import { GuidesPageClient } from './GuidesPageClient';
+import { buildPageMetadata } from '@/lib/seo';
 
-import { GuidesModule } from '@/components/guides/GuidesModule';
-import { PageShell } from '@/components/ui/Core';
-export default function GuidesPage() { return <PageShell><GuidesModule /></PageShell>; }
+export const metadata: Metadata = buildPageMetadata({
+  title: 'Útmutatók',
+  description: 'Ügyintézési és hallgatói útmutatók kereshető, kategorizált gyűjteménye.',
+  path: '/guides',
+});
+
+export default function GuidesPage() {
+  return <GuidesPageClient />;
+}

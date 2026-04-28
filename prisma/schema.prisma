@@ -15,6 +15,14 @@ enum UserRole {
   ADMIN
 }
 
+enum CategoryScope {
+  news
+  events
+  gallery
+  guides
+  office
+}
+
 model User {
   id           String   @id @default(cuid())
   username     String   @unique
@@ -22,6 +30,8 @@ model User {
   role         UserRole @default(OFFICE)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+
+  calculatorState CalculatorState?
 }
 
 enum ContentStatus {
@@ -94,4 +104,132 @@ model GymBooking {
   status         BookingStatus @default(pending)
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
+}
+
+/** KKI kalkulátor mentett állapot – egy aktív snapshot / felhasználó (§12). */
+model CalculatorState {
+  userId    String   @id
+  semesters Json
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+/** Galéria mappa / album (§13). */
+model GalleryFolder {
+  id        Int           @id @default(autoincrement())
+  name      String
+  sortOrder Int           @default(0)
+  items     GalleryItem[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+/** Galéria kép meta – `imageUrl` lehet üres (UI gradiens); különben letöltés / megjelenítés. */
+model GalleryItem {
+  id        Int           @id @default(autoincrement())
+  folderId  Int
+  folder    GalleryFolder @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  titleHu   String
+  titleEn   String
+  listDate  String
+  imageUrl  String        @default("")
+  status    ContentStatus @default(published)
+  sortOrder Int           @default(0)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+/** Útmutató / tudásbázis bejegyzés (§14). */
+model Guide {
+  id           Int           @id @default(autoincrement())
+  titleHu      String
+  titleEn      String
+  excerptHu    String        @default("")
+  excerptEn    String        @default("")
+  bodyHu       String        @default("")
+  bodyEn       String        @default("")
+  category     String        @default("Általános")
+  topic        String        @default("")
+  keywords     String        @default("")
+  documentUrl  String?
+  documentType String?
+  listDate     String
+  status       ContentStatus @default(published)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+/** About oldal szöveges blokk (bemutatkozás, szerkezet, történet, kihez forduljak) – §15. */
+model AboutNarrative {
+  id        Int           @id @default(autoincrement())
+  blockKey  String        @unique
+  titleHu   String
+  titleEn   String
+  bodyHu    String        @default("")
+  bodyEn    String        @default("")
+  sortOrder Int           @default(0)
+  status    ContentStatus @default(published)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+/** About oldal szerepkör / tag kártya – §15.1. */
+model AboutMember {
+  id        Int           @id @default(autoincrement())
+  name      String
+  roleHu    String
+  roleEn    String
+  bioHu     String        @default("")
+  bioEn     String        @default("")
+  groupHu   String        @default("")
+  groupEn   String        @default("")
+  imageUrl  String        @default("")
+  sortOrder Int           @default(0)
+  status    ContentStatus @default(published)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+/** Office oldal összesített állapota (§16): nyitvatartás, bent lévők, ügyintézés, szolgáltatás infó. */
+model OfficeSnapshot {
+  id              Int           @id
+  openingHoursHu  String
+  openingHoursEn  String
+  presentNowHu    String        @default("")
+  presentNowEn    String        @default("")
+  serviceStatusHu String
+  serviceStatusEn String
+  servicesInfoHu  String        @default("")
+  servicesInfoEn  String        @default("")
+  nfcInfoHu       String        @default("")
+  nfcInfoEn       String        @default("")
+  quickInfoHu     String        @default("")
+  quickInfoEn     String        @default("")
+  status          ContentStatus @default(published)
+  updatedAt       DateTime      @updatedAt
+}
+
+/** Kategória SSOT admin kezeléshez (§17, §19). */
+model Category {
+  id        Int           @id @default(autoincrement())
+  scope     CategoryScope
+  nameHu    String
+  nameEn    String
+  sortOrder Int           @default(0)
+  status    ContentStatus @default(published)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+}
+
+/** Admin audit események – érzékeny írási műveletek naplója (§17, §21). */
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  actorId    String?
+  actorName  String
+  actorRole  String
+  action     String
+  entityType String
+  entityId   String
+  details    String   @default("")
+  createdAt  DateTime @default(now())
 }

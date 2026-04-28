@@ -1,7 +1,14 @@
 # Specification – index
 
-A **teljes funkcionális és minőségi specifikáció** a repository gyökerében található:
+Ez a `docs` belépési pont a master specifikációhoz.
+
+## Kanonikus master spec
 
 **[../PROJECT_MASTER_SPEC.md](../PROJECT_MASTER_SPEC.md)**
 
-Ez a fájl a master spec §24 szerinti `docs/specification.md` helye: nem duplikáljuk a spec tartalmát, csak ide mutatunk. Implementációs részletek és fázisolt ütem: **[roadmap.md](roadmap.md)**.
+## Kapcsolódó dokumentumok
+
+- Roadmap és fázisok: [design-and-ssot-phase-roadmap.md](./design-and-ssot-phase-roadmap.md)
+- Döntési napló: [decision-log.md](./decision-log.md)
+- Haladási napló: [progress-log.md](./progress-log.md)
+- Dokumentációs index: [documentation-index.md](./documentation-index.md)

@@ -46,3 +46,4 @@ export const patchNewsSchema = createNewsSchema.partial();
 
 export type CreateNewsInput = z.infer<typeof createNewsSchema>;
 export type PatchNewsInput = z.infer<typeof patchNewsSchema>;
+

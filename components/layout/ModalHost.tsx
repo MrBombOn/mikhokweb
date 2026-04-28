@@ -50,7 +50,7 @@ export function ModalHost() {
             <h2 id="modal-title" style={{ margin: '0 0 6px 0' }}>
               {modal.title}
             </h2>
-            <p style={{ margin: 0, color: 'var(--muted)' }}>{modal.content}</p>
+            <p style={{ margin: 0, color: 'var(--muted)', whiteSpace: 'pre-wrap' }}>{modal.content}</p>
           </div>
           <button type="button" className="btn btn-secondary" onClick={closeModal}>
             Bezárás

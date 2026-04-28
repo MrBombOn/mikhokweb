@@ -2,28 +2,22 @@
  * @file REST: naptár események lista (GET) + létrehozás (POST, OFFICE/ADMIN).
  */
 import { NextResponse } from 'next/server';
-import type { Prisma } from '@prisma/client';
-import { prisma } from '@/lib/db';
 import { canManageNews, getCurrentUser } from '@/lib/auth/current-user';
-import { calendarEventToItem } from '@/lib/mappers/calendar';
+import { createCalendarEvent, listEventsForRole } from '@/features/events/server';
 import { createEventSchema } from '@/lib/validation/events';
+import { enforceSameOrigin } from '@/lib/security/csrf';
+import { writeAudit } from '@/lib/audit/write-audit';
 
 export async function GET() {
   const user = await getCurrentUser();
-  const where: Prisma.CalendarEventWhereInput =
-    user && canManageNews(user.role)
-      ? { status: { not: 'deleted' } }
-      : { status: 'published' };
-
-  const rows = await prisma.calendarEvent.findMany({
-    where,
-    orderBy: [{ eventDate: 'asc' }, { time: 'asc' }, { id: 'asc' }],
-  });
-
-  return NextResponse.json({ items: rows.map(calendarEventToItem) });
+  const payload = await listEventsForRole(user?.role);
+  return NextResponse.json(payload);
 }
 
 export async function POST(request: Request) {
+  const csrf = enforceSameOrigin(request);
+  if (csrf) return csrf;
+
   const user = await getCurrentUser();
   if (!user || !canManageNews(user.role)) {
     return NextResponse.json({ error: 'Nincs jogosultság.' }, { status: 403 });
@@ -41,20 +35,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Validációs hiba', details: parsed.error.flatten() }, { status: 400 });
   }
 
-  const d = parsed.data;
-  const row = await prisma.calendarEvent.create({
-    data: {
-      titleHu: d.titleHu,
-      titleEn: d.titleEn,
-      eventDate: d.eventDate,
-      time: d.time,
-      location: d.location,
-      category: d.category,
-      dayLabel: d.dayLabel,
-      note: d.note,
-      status: d.status,
-    },
+  const item = await createCalendarEvent(parsed.data);
+  await writeAudit({
+    actor: user,
+    action: 'create_event',
+    entityType: 'calendar_event',
+    entityId: String(item.id),
+    details: `${item.date} ${item.category}`,
   });
-
-  return NextResponse.json({ item: calendarEventToItem(row) }, { status: 201 });
+  return NextResponse.json({ item }, { status: 201 });
 }

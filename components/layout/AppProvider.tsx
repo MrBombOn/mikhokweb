@@ -53,6 +53,9 @@ type AppContextValue = {
   loginForm: LoginForm;
   setLoginForm: (value: LoginForm) => void;
   submitAdminLogin: () => void;
+  adminLoginPending: boolean;
+  adminLoginError: string | null;
+  clearAdminLoginError: () => void;
 };
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -72,6 +75,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [modal, setModal] = useState<{ title: string; content: string } | null>(null);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [loginForm, setLoginForm] = useState<LoginForm>({ username: '', password: '' });
+  const [adminLoginPending, setAdminLoginPending] = useState(false);
+  const [adminLoginError, setAdminLoginError] = useState<string | null>(null);
 
   // --- Hydration után: mentett nyelv/téma + session ellenőrzés ---
   useEffect(() => {
@@ -140,37 +145,62 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }
 
   function openAdminLogin() {
+    setAdminLoginError(null);
     setShowAdminLogin(true);
   }
 
   function closeAdminLogin() {
+    setAdminLoginError(null);
     setShowAdminLogin(false);
   }
 
   /** Szerveroldali login hívás; siker esetén session süti, lokálisan admin true. */
   const submitAdminLogin = useCallback(() => {
     void (async () => {
+      if (adminLoginPending) return;
+      setAdminLoginError(null);
       const parsed = loginFormSchema.safeParse(loginForm);
       if (!parsed.success) {
+        setAdminLoginError(lang === 'hu' ? 'Add meg a felhasználónevet és a jelszót.' : 'Please provide username and password.');
         toast(lang === 'hu' ? 'Add meg a felhasználónevet és a jelszót.' : 'Please provide username and password.', 'warning');
         return;
       }
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(parsed.data),
-      });
-      if (!res.ok) {
-        toast(lang === 'hu' ? 'Belépés sikertelen.' : 'Login failed.', 'warning');
-        return;
+      setAdminLoginPending(true);
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(parsed.data),
+        });
+        const payload = (await res.json().catch(() => ({}))) as { error?: string };
+        if (!res.ok) {
+          let message = lang === 'hu' ? 'Belépés sikertelen.' : 'Login failed.';
+          if (payload.error === 'invalid_credentials') {
+            message = lang === 'hu' ? 'Hibás felhasználónév vagy jelszó.' : 'Invalid username or password.';
+          } else if (payload.error === 'invalid_body') {
+            message = lang === 'hu' ? 'Hiányzó vagy hibás login adatok.' : 'Missing or invalid login payload.';
+          } else if (payload.error?.includes('Túl sok')) {
+            message = payload.error;
+          }
+          setAdminLoginError(message);
+          toast(message, 'warning');
+          return;
+        }
+        setIsAdmin(true);
+        setShowAdminLogin(false);
+        setLoginForm({ username: '', password: '' });
+        setAdminLoginError(null);
+        toast(lang === 'hu' ? 'Admin mód aktiválva.' : 'Admin mode enabled.', 'success');
+      } catch {
+        const message = lang === 'hu' ? 'Hálózati hiba, próbáld újra.' : 'Network error, please retry.';
+        setAdminLoginError(message);
+        toast(message, 'warning');
+      } finally {
+        setAdminLoginPending(false);
       }
-      setIsAdmin(true);
-      setShowAdminLogin(false);
-      setLoginForm({ username: '', password: '' });
-      toast(lang === 'hu' ? 'Admin mód aktiválva.' : 'Admin mode enabled.', 'success');
     })();
-  }, [loginForm, lang, toast]);
+  }, [adminLoginPending, loginForm, lang, toast]);
 
   const value = useMemo(
     () => ({
@@ -195,8 +225,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       loginForm,
       setLoginForm,
       submitAdminLogin,
+      adminLoginPending,
+      adminLoginError,
+      clearAdminLoginError: () => setAdminLoginError(null),
     }),
-    [lang, theme, isAdmin, toasts, modal, showAdminLogin, loginForm, setGuestMode, toast, submitAdminLogin],
+    [lang, theme, isAdmin, toasts, modal, showAdminLogin, loginForm, submitAdminLogin, adminLoginPending, adminLoginError, setGuestMode, toast],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

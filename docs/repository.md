@@ -11,4 +11,4 @@ git clone https://github.com/MrBombOn/mikhokweb.git
 cd mikhokweb
 ```
 
-További összefoglaló: gyökér [`README.md`](../README.md) és [`DOCUMENTATION_PROJECT_WORKFLOW.md`](../DOCUMENTATION_PROJECT_WORKFLOW.md).
+További összefoglaló: gyökér [`README.md`](../README.md), workflow index [`project-workflow.md`](./project-workflow.md), dokumentáció index [`documentation-index.md`](./documentation-index.md).

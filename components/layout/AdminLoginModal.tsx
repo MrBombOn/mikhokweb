@@ -7,57 +7,92 @@
  */
 'use client';
 
+import type { FormEvent } from 'react';
 import { useApp } from '@/components/layout/AppProvider';
 import { ShieldIcon } from '@/components/ui/Icons';
 import { AdminModal } from '@/components/ui/AdminModal';
 
 export function AdminLoginModal() {
-  const { lang, showAdminLogin, closeAdminLogin, loginForm, setLoginForm, submitAdminLogin, setGuestMode } = useApp();
+  const {
+    lang,
+    showAdminLogin,
+    closeAdminLogin,
+    loginForm,
+    setLoginForm,
+    submitAdminLogin,
+    setGuestMode,
+    adminLoginPending,
+    adminLoginError,
+    clearAdminLoginError,
+  } = useApp();
+
+  function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    submitAdminLogin();
+  }
+
   return (
-    <AdminModal open={showAdminLogin} title={lang === 'hu' ? 'Bejelentkezés' : 'Sign in'} onClose={closeAdminLogin}>
-      <div className="stack">
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-          <span className="btn btn-secondary icon-btn" aria-hidden="true">
+    <AdminModal
+      open={showAdminLogin}
+      title={lang === 'hu' ? 'Bejelentkezés' : 'Sign in'}
+      closeLabel={lang === 'hu' ? 'Bezárás' : 'Close'}
+      onClose={closeAdminLogin}
+    >
+      <form className="stack" onSubmit={onSubmit}>
+        <div className="admin-login-head">
+          <span className="btn btn-secondary icon-btn admin-login-shield" aria-hidden="true">
             <ShieldIcon />
           </span>
           <div>
-            <p style={{ margin: 0, color: 'var(--muted)', lineHeight: 1.7 }}>
+            <p className="admin-login-lead">
               {lang === 'hu'
                 ? 'Felhasználónév és jelszó a seedelt adatbázis felhasználójával. Guest mód: session törlése.'
                 : 'Username and password match a seeded database user. Guest mode clears the session.'}
             </p>
           </div>
         </div>
-        <div className="modal-grid" style={{ marginTop: 18 }}>
-          <label>
-            <div style={{ marginBottom: 8 }}>{lang === 'hu' ? 'Felhasználónév' : 'Username'}</div>
+        <div className="modal-grid admin-login-grid">
+          <label className="admin-login-field">
+            <div className="admin-login-field-label">{lang === 'hu' ? 'Felhasználónév' : 'Username'}</div>
             <input
               className="input"
               placeholder={lang === 'hu' ? 'Felhasználónév' : 'Username'}
               value={loginForm.username}
-              onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
+              autoComplete="username"
+              autoFocus
+              onChange={(e) => {
+                if (adminLoginError) clearAdminLoginError();
+                setLoginForm({ ...loginForm, username: e.target.value });
+              }}
+              disabled={adminLoginPending}
             />
           </label>
-          <label>
-            <div style={{ marginBottom: 8 }}>{lang === 'hu' ? 'Jelszó' : 'Password'}</div>
+          <label className="admin-login-field">
+            <div className="admin-login-field-label">{lang === 'hu' ? 'Jelszó' : 'Password'}</div>
             <input
               className="input"
               type="password"
               placeholder={lang === 'hu' ? 'Jelszó' : 'Password'}
               value={loginForm.password}
-              onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+              autoComplete="current-password"
+              onChange={(e) => {
+                if (adminLoginError) clearAdminLoginError();
+                setLoginForm({ ...loginForm, password: e.target.value });
+              }}
+              disabled={adminLoginPending}
             />
           </label>
         </div>
+        {adminLoginError ? <p className="admin-login-error">{adminLoginError}</p> : null}
         <div className="news-form-actions">
-          <button className="btn btn-secondary" type="button" onClick={setGuestMode}>
+          <button className="btn btn-secondary" type="button" onClick={setGuestMode} disabled={adminLoginPending}>
             {lang === 'hu' ? 'Guest mód' : 'Guest mode'}
           </button>
-          <button className="btn btn-primary" type="button" onClick={submitAdminLogin}>
-            {lang === 'hu' ? 'Belépés' : 'Sign in'}
+          <button className="btn btn-primary" type="submit" disabled={adminLoginPending}>
+            {adminLoginPending ? (lang === 'hu' ? 'Belépés...' : 'Signing in...') : lang === 'hu' ? 'Belépés' : 'Sign in'}
           </button>
         </div>
-      </div>
+      </form>
     </AdminModal>
   );
 }

@@ -2,28 +2,22 @@
  * @file REST: hírek lista (GET) + létrehozás (POST, OFFICE/ADMIN).
  */
 import { NextResponse } from 'next/server';
-import type { Prisma } from '@prisma/client';
-import { prisma } from '@/lib/db';
 import { canManageNews, getCurrentUser } from '@/lib/auth/current-user';
-import { newsRowToItem } from '@/lib/mappers/news';
-import { createNewsSchema } from '@/lib/validation/news';
+import { createNewsSchema } from '@/features/news/schema';
+import { createNewsItem, listNewsForRole } from '@/features/news/server';
+import { enforceSameOrigin } from '@/lib/security/csrf';
+import { writeAudit } from '@/lib/audit/write-audit';
 
 export async function GET() {
   const user = await getCurrentUser();
-  const where: Prisma.NewsWhereInput =
-    user && canManageNews(user.role)
-      ? { status: { not: 'deleted' } }
-      : { status: 'published' };
-
-  const rows = await prisma.news.findMany({
-    where,
-    orderBy: [{ pinned: 'desc' }, { listDate: 'desc' }, { id: 'desc' }],
-  });
-
-  return NextResponse.json({ items: rows.map(newsRowToItem) });
+  const items = await listNewsForRole(user?.role);
+  return NextResponse.json({ items });
 }
 
 export async function POST(request: Request) {
+  const csrf = enforceSameOrigin(request);
+  if (csrf) return csrf;
+
   const user = await getCurrentUser();
   if (!user || !canManageNews(user.role)) {
     return NextResponse.json({ error: 'Nincs jogosultság.' }, { status: 403 });
@@ -42,24 +36,14 @@ export async function POST(request: Request) {
   }
 
   const data = parsed.data;
-  const row = await prisma.news.create({
-    data: {
-      source: data.source,
-      category: data.category,
-      status: data.status,
-      pinned: data.pinned,
-      listDate: data.listDate,
-      titleHu: data.titleHu,
-      titleEn: data.titleEn,
-      textHu: data.textHu,
-      textEn: data.textEn,
-      author: data.author,
-      cover: data.cover,
-      hasCover: data.hasCover,
-      scheduledFor: data.scheduledFor,
-      externalUrl: data.externalUrl,
-    },
+  const item = await createNewsItem(data);
+  await writeAudit({
+    actor: user,
+    action: 'create_news',
+    entityType: 'news',
+    entityId: String(item.id),
+    details: `${item.status}:${item.category}`,
   });
 
-  return NextResponse.json({ item: newsRowToItem(row) }, { status: 201 });
+  return NextResponse.json({ item }, { status: 201 });
 }

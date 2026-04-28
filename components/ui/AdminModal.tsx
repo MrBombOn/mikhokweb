@@ -19,16 +19,26 @@ import { createPortal } from 'react-dom';
 type AdminModalProps = {
   open: boolean;
   title: string;
+  closeLabel?: string;
   onClose: () => void;
   children: ReactNode;
 };
 
-export function AdminModal({ open, title, onClose, children }: AdminModalProps) {
+export function AdminModal({ open, title, closeLabel = 'Close', onClose, children }: AdminModalProps) {
   useEffect(() => {
     if (!open) return;
     document.body.classList.add('admin-modal-open');
     return () => document.body.classList.remove('admin-modal-open');
   }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [open, onClose]);
 
   if (!open || typeof document === 'undefined') return null;
 
@@ -39,7 +49,7 @@ export function AdminModal({ open, title, onClose, children }: AdminModalProps) 
         <div className="admin-modal-header">
           <h3>{title}</h3>
           <button className="btn btn-secondary" type="button" onClick={onClose}>
-            Bezárás
+            {closeLabel}
           </button>
         </div>
         <div className="admin-modal-content">{children}</div>

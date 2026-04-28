@@ -21,6 +21,7 @@ export const messages = {
   hu: {
     brand: 'PTE MIK HÖK',
     nav: {
+      search: 'Keresés',
       news: 'Hírek',
       calendar: 'Naptár',
       calculator: 'KKI kalkulátor',
@@ -48,6 +49,7 @@ export const messages = {
   en: {
     brand: 'PTE MIK HÖK',
     nav: {
+      search: 'Search',
       news: 'News',
       calendar: 'Calendar',
       calculator: 'KKI Calculator',
