@@ -38,3 +38,9 @@ Rövid státusz minden lezárt vagy részben lezárt lépésről (master spec §
 - **Mit:** Prisma `News` + enumok (`ContentStatus`, `NewsSource`), migráció `phase4_news`, seed 3 kezdő hír; `GET`/`POST` `/api/news`, `GET`/`PATCH`/`DELETE` `/api/news/[id]` (soft delete), RBAC `lib/auth/current-user.ts`, Zod `lib/validation/news.ts`, mapper `lib/mappers/news.ts`; `LandingNews` API + `localStorage` csak kategória/keresés; `/news` + `NewsPageList`; `docs/api.md` hír végpontok.
 - **Állapot:** `npm run build` zöld; `npx prisma db seed` kitölti a híreket.
 - **Következő lépés:** opcionális audit, rate limit, publikált hír részletes nézet URL-ről.
+
+## 2026-04-28 – Fázis 5 (naptár + tornaterem: DB → API → UI)
+
+- **Mit:** Prisma `CalendarEvent`, `GymBooking` + `BookingStatus`, migráció `phase5_calendar_gym`, seed események + foglalások; `GET`/`POST` `/api/events`, `GET`/`PATCH`/`DELETE` `/api/events/[id]`; `GET`/`POST` `/api/bookings`, `PATCH` `/api/bookings/[id]`; Zod `lib/validation/events.ts`, `lib/validation/bookings.ts`, mapper `lib/mappers/calendar.ts`, típusok `types/calendar.ts`; `CalendarModule` REST + dinamikus havi rács + `monthLabel`; `docs/api.md` bővítés.
+- **Állapot:** `npm run build` zöld; `npx prisma db seed` kitölti az adatot.
+- **Következő lépés:** esemény szerkesztő (PATCH a modulból), iCal / campus szinkron (§29.6), rate limit a nyilvános POST foglalásra.

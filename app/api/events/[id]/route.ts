@@ -2,6 +2,7 @@
  * @file REST: egy naptáresemény GET / PATCH / DELETE (soft delete, OFFICE/ADMIN íráshoz).
  */
 import { NextResponse } from 'next/server';
+import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db';
 import { canManageNews, getCurrentUser } from '@/lib/auth/current-user';
 import { calendarEventToItem } from '@/lib/mappers/calendar';
@@ -65,17 +66,16 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 
   const p = parsed.data;
-  const updateData: Record<string, unknown> = {
-    ...(p.titleHu !== undefined && { titleHu: p.titleHu }),
-    ...(p.titleEn !== undefined && { titleEn: p.titleEn }),
-    ...(p.eventDate !== undefined && { eventDate: p.eventDate }),
-    ...(p.time !== undefined && { time: p.time }),
-    ...(p.location !== undefined && { location: p.location }),
-    ...(p.category !== undefined && { category: p.category }),
-    ...(p.dayLabel !== undefined && { dayLabel: p.dayLabel }),
-    ...(p.note !== undefined && { note: p.note }),
-    ...(p.status !== undefined && { status: p.status }),
-  };
+  const updateData: Prisma.CalendarEventUpdateInput = {};
+  if (p.titleHu !== undefined) updateData.titleHu = p.titleHu;
+  if (p.titleEn !== undefined) updateData.titleEn = p.titleEn;
+  if (p.eventDate !== undefined) updateData.eventDate = p.eventDate;
+  if (p.time !== undefined) updateData.time = p.time;
+  if (p.location !== undefined) updateData.location = p.location;
+  if (p.category !== undefined) updateData.category = p.category;
+  if (p.dayLabel !== undefined) updateData.dayLabel = p.dayLabel;
+  if (p.note !== undefined) updateData.note = p.note;
+  if (p.status !== undefined) updateData.status = p.status;
   if (Object.keys(updateData).length === 0) {
     return NextResponse.json({ error: 'Nincs frissítendő mező.' }, { status: 400 });
   }

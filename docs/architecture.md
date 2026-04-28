@@ -30,3 +30,19 @@ A rendszer Next.js App Router, feature-first modulok és központi SSOT elvek sz
 | Session API | `app/api/auth/session/route.ts` | `GET` aktuális user; `DELETE` logout |
 | Middleware | `middleware.ts` | JWT ellenőrzés; csak `OFFICE` vagy `ADMIN` role |
 | Seed | `prisma/seed.ts` | `admin` + `office` demó felhasználók (env-ből felülírható jelszó) |
+
+## Fázis 4 – hírek
+
+| Réteg | Hely | Szerep |
+|--------|------|--------|
+| Adat | `News`, enumok | CRUD + soft delete; seed demó hírek |
+| API | `/api/news`, `/api/news/[id]` | RBAC: írás OFFICE/ADMIN; olvasás: vendég csak `published` |
+| Kliens | `LandingNews`, `/news` | `GET`/`POST`/`PATCH`/`DELETE`; `types/news.ts`, `lib/validation/news.ts` |
+
+## Fázis 5 – naptár és tornaterem
+
+| Réteg | Hely | Szerep |
+|--------|------|--------|
+| Adat | `CalendarEvent`, `GymBooking`, `BookingStatus` | Események + foglalási igények; seed a korábbi `lib/content` demóval összhangban |
+| API | `/api/events`, `/api/bookings` + `[id]` | Esemény: írás OFFICE/ADMIN; foglalás: `POST` nyilvános, státusz PATCH admin |
+| Kliens | `CalendarModule` | Egy adatforrás a három nézethez; dinamikus hónap a kiválasztott nap szerint; `types/calendar.ts` |
