@@ -1,13 +1,15 @@
 import type { Metadata } from 'next';
+import { PublicRouteJsonLd } from '@/components/seo/PublicRouteJsonLd';
 import { GuidesPageClient } from './GuidesPageClient';
-import { buildPageMetadata } from '@/lib/seo';
+import { buildPageMetadataFromMessages } from '@/lib/seo';
 
-export const metadata: Metadata = buildPageMetadata({
-  title: 'Útmutatók',
-  description: 'Ügyintézési és hallgatói útmutatók kereshető, kategorizált gyűjteménye.',
-  path: '/guides',
-});
+export const metadata: Metadata = buildPageMetadataFromMessages('guides', '/guides');
 
 export default function GuidesPage() {
-  return <GuidesPageClient />;
+  return (
+    <>
+      <PublicRouteJsonLd routeKey="guides" path="/guides" layout="collection" />
+      <GuidesPageClient />
+    </>
+  );
 }

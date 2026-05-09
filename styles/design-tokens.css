@@ -20,6 +20,28 @@
   --pink: #ff7dbc;
   --purple: #9e8dff;
   --teal: #3ec8c8;
+  --glow-cyan: #22d3ee;
+  --glow-violet: #8b5cf6;
+
+  /* SSOT: kiemelt, többször újrahasznált design felületi tokenek */
+  --fx-border-accent:
+    linear-gradient(125deg, color-mix(in srgb, var(--primary) 52%, transparent), color-mix(in srgb, var(--glow-violet) 44%, transparent), color-mix(in srgb, var(--glow-cyan) 44%, transparent));
+  --fx-border-accent-strong:
+    linear-gradient(125deg, color-mix(in srgb, var(--primary) 70%, transparent), color-mix(in srgb, var(--glow-violet) 55%, transparent), color-mix(in srgb, #10b981 52%, transparent));
+  --fx-border-soft:
+    linear-gradient(135deg, color-mix(in srgb, var(--primary) 28%, transparent), color-mix(in srgb, var(--glow-violet) 25%, transparent));
+  --fx-surface-card:
+    linear-gradient(var(--surface), var(--surface));
+  --fx-surface-card-strong:
+    linear-gradient(color-mix(in srgb, var(--surface-strong) 95%, white 5%), color-mix(in srgb, var(--surface) 92%, white 8%));
+  --fx-shadow-accent: 0 14px 42px color-mix(in srgb, var(--primary) 14%, transparent);
+  --fx-shadow-accent-hover: 0 18px 48px color-mix(in srgb, var(--primary) 20%, transparent);
+
+  /* Háttér mozgó fény-rétegek (light/dark-ban külön felhangolva) */
+  --fx-bg-glow-a: color-mix(in srgb, var(--primary) 24%, transparent);
+  --fx-bg-glow-b: color-mix(in srgb, var(--glow-violet) 18%, transparent);
+  --fx-bg-glow-c: color-mix(in srgb, var(--glow-cyan) 16%, transparent);
+  --fx-bg-overlay-opacity: 0.8;
 
   /* Radius skála (§32.1) */
   --radius-xs: 10px;
@@ -65,6 +87,8 @@
   --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
   --ease-out: cubic-bezier(0, 0, 0.2, 1);
   --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  /** Finom „snap” / lebegés (FAB, panelek) — csak rövid animációkhoz */
+  --ease-spring-out: cubic-bezier(0.22, 1, 0.36, 1);
   --transition: var(--motion-duration-base) var(--ease-standard);
   /** Belépő / stagger (D4) */
   --motion-enter-translate-y: 14px;
@@ -75,10 +99,25 @@
   --layout-shell-gutter: 24px;
   --layout-main-pad-bottom: var(--space-25);
   --layout-section-padding-y: var(--space-8);
-  --layout-landing-scroll-offset: 110px;
   --layout-landing-news-section-pt: 42px;
   --layout-landing-news-surface-pad: 28px;
   --layout-fab-edge: 22px;
+  /* Topbar (V14): margin, nav HÖK jel, sor min-magasság, border, kalkulátor sticky eltartás — `docs/design-system.md` (Layout és érintés) */
+  --layout-topbar-margin-top: 4px;
+  /* Nav HÖK jel ≈ ikon / primary gomb magasság (`nav-icon-btn` 48px) */
+  --layout-nav-brand-mark-size: 48px;
+  --layout-topbar-row-min-height: 48px;
+  --layout-topbar-row-min-height-narrow: 48px;
+  --layout-topbar-border-width: 1px;
+  --layout-topbar-inner-padding-block: 4px;
+  /* Kalkulátor összegző sticky: topbar alatti plusz rés (kerekítés / overflow ne vágja) */
+  --layout-calculator-sticky-offset-after-topbar: 16px;
+  /* Teljes sticky topbar magasság (margó + függőleges padding + sor + border) — kalkulátor sticky, `#landing-news` horgony */
+  --layout-topbar-sticky-offset: calc(
+    var(--layout-topbar-margin-top) + (var(--layout-topbar-inner-padding-block) * 2) +
+      var(--layout-topbar-row-min-height) + var(--layout-topbar-border-width)
+  );
+  --layout-landing-scroll-offset: calc(var(--layout-topbar-sticky-offset) + 8px);
   --touch-target-min: 44px;
   --touch-target-fab: 56px;
 
@@ -96,9 +135,24 @@ html[data-theme='dark'] {
   --primary: #7ea7ff;
   --primary-strong: #5b88f0;
   --accent: rgba(126, 167, 255, 0.13);
+  --glow-cyan: #67e8f9;
+  --glow-violet: #a78bfa;
+  --fx-bg-glow-a: color-mix(in srgb, var(--primary) 28%, transparent);
+  --fx-bg-glow-b: color-mix(in srgb, var(--glow-violet) 24%, transparent);
+  --fx-bg-glow-c: color-mix(in srgb, var(--glow-cyan) 18%, transparent);
+  --fx-bg-overlay-opacity: 0.94;
   --shadow-xs: 0 4px 14px rgba(0, 0, 0, 0.2);
   --shadow-sm: 0 10px 26px rgba(0, 0, 0, 0.22);
   --shadow-md: 0 18px 44px rgba(0, 0, 0, 0.28);
   --shadow-lg: 0 28px 70px rgba(0, 0, 0, 0.34);
   --shadow-xl: 0 36px 88px rgba(0, 0, 0, 0.42);
+}
+
+/** Keskeny kijelző: keskenyebb oldalsó margó, FAB közelebb a széléhez. */
+@media (max-width: 480px) {
+  :root {
+    --layout-shell-gutter: 16px;
+    --layout-fab-edge: 12px;
+    --layout-section-padding-y: var(--space-6);
+  }
 }

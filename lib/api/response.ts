@@ -31,7 +31,13 @@ export function conflict(error: string) {
   return NextResponse.json({ error }, { status: 409 });
 }
 
-export function tooManyRequests(error = 'Túl sok kérés. Próbáld meg később.') {
-  return NextResponse.json({ error }, { status: 429 });
+export function tooManyRequests(error = 'Túl sok kérés. Próbáld meg később.', retryAfterSec?: number) {
+  const headers =
+    retryAfterSec != null && retryAfterSec > 0 ? { 'Retry-After': String(retryAfterSec) } : undefined;
+  return NextResponse.json({ error }, { status: 429, headers });
+}
+
+export function serverError(error = 'Szerverhiba.') {
+  return NextResponse.json({ error }, { status: 500 });
 }
 

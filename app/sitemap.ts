@@ -27,6 +27,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/guides',
     '/news',
     '/office',
+    '/privacy',
+    '/search',
   ];
   return paths.map((path) => ({
     url: `${base}${path || '/'}`,

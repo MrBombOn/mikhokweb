@@ -31,6 +31,11 @@ A §12.3 szerinti rögzítés; a tényleges implementáció: `lib/calculator/com
 5. **KKI**  
    `kki = weighted × ki`
 
+## Félévenkénti összesítés
+
+- Ugyanaz a képlet, mint a globál panelen: `computeSemesterSummary(semester)` = `computeSummaryFromSubjects` a félév **nem ghost** tárgyaira (`ghost` félév → minden mutató 0).
+- Implementáció: `lib/calculator/compute.ts` — ne duplikálj más számítást a UI-ban.
+
 ## Megjelenítés
 
 - A UI a fenti értékeket általában **2 tizedesre** kerekíti (`formatSummaryDisplay`).
@@ -43,7 +48,9 @@ A §12.3 szerinti rögzítés; a tényleges implementáció: `lib/calculator/com
 
 ## Export
 
-- JSON export a kliensen: `lib/calculator/export.ts` – tartalmazza a `semesters` tömböt és meta (`exportedAt`, `lang`, `version`).
+- JSON export a kliensen: `lib/calculator/export.ts` – tartalmazza a `semesters` tömböt és meta (`exportedAt`, `lang`, `version`, **`formulaVersion`**).
+- A `formulaVersion` értéke: `lib/calculator/formula-version.ts` (`CALCULATOR_FORMULA_VERSION`) – a képletek változásakor növelendő.
+- Import: `lib/calculator/migrate.ts` (`migrateCalculatorImport`) – régi tömb, `{ semesters }` wrapper, opcionális `completed` mező normalizálása.
 
 ## Mentés
 

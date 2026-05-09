@@ -61,6 +61,8 @@ export async function createAboutMember(d: CreateAboutMemberInput) {
       groupHu: d.groupHu,
       groupEn: d.groupEn,
       imageUrl: img === undefined || img === null ? '' : img,
+      publishedAt: d.publishedAt ?? null,
+      isAlumni: d.isAlumni ?? false,
       sortOrder: d.sortOrder,
       status: d.status,
     },
@@ -100,6 +102,8 @@ export async function patchAboutMember(id: number, patch: PatchAboutMemberInput)
   if (patch.bioEn !== undefined) updateData.bioEn = patch.bioEn;
   if (patch.groupHu !== undefined) updateData.groupHu = patch.groupHu;
   if (patch.groupEn !== undefined) updateData.groupEn = patch.groupEn;
+  if (patch.publishedAt !== undefined) updateData.publishedAt = patch.publishedAt;
+  if (patch.isAlumni !== undefined) updateData.isAlumni = patch.isAlumni;
   if (patch.sortOrder !== undefined) updateData.sortOrder = patch.sortOrder;
   if (patch.status !== undefined) updateData.status = patch.status;
 

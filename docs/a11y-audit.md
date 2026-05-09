@@ -58,4 +58,8 @@ Mobil és akadálymentességi gyorsaudit jegyzetek (spec §22, §25 következő 
 
 - Színek kontrasztellenőrzése (light/dark) kritikus komponenseken.
 - Form mezők vizuális label + leíró szöveg egységesítése.
+
+## 2026-05-09 – Fázis 18 (WCAG backlog dokumentálás)
+
+- **Mit:** ütemezhető manuális WCAG 2.2 checklista és hátralék: [`wcag-phase18-backlog.md`](./wcag-phase18-backlog.md) (a fenti D3–D5 javításokra épül).
 - Billentyűzetes végigjárás és tab sorrend ellenőrzése az admin route-okon.

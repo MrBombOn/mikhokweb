@@ -15,6 +15,10 @@ const demoNews: NewsItem[] = [
     author: 'MIK HÖK',
     cover: 'blue',
     hasCover: true,
+    slug: 'tavaszi-kari-forum',
+    canonicalUrl: 'https://example.invalid/news/tavaszi-kari-forum',
+    coverAltHu: 'Hallgatók a kari fórumon',
+    coverAltEn: 'Students at the faculty forum',
   },
   {
     id: 2,
@@ -31,6 +35,10 @@ const demoNews: NewsItem[] = [
     cover: 'pink',
     hasCover: true,
     externalUrl: 'https://facebook.com',
+    slug: 'facebook-bejegyzes-kozossegi-program',
+    canonicalUrl: 'https://example.invalid/news/facebook-bejegyzes-kozossegi-program',
+    coverAltHu: 'Közösségi program illusztráció',
+    coverAltEn: 'Community program illustration',
   },
   {
     id: 3,
@@ -47,6 +55,10 @@ const demoNews: NewsItem[] = [
     cover: 'pink',
     hasCover: true,
     externalUrl: 'https://instagram.com',
+    slug: 'instagram-feed-esemenyfotok',
+    canonicalUrl: 'https://example.invalid/news/instagram-feed-esemenyfotok',
+    coverAltHu: 'Esemény fotó összefoglaló',
+    coverAltEn: 'Event photo recap',
   },
 ];
 

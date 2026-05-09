@@ -1,9 +1,7 @@
 'use client';
 
-import { useApp } from '@/components/layout/AppProvider';
-import { NewsPageList } from '@/components/news/NewsPageList';
+import { LandingNews } from '@/components/landing/LandingNews';
 
 export function NewsPageClient() {
-  const { lang } = useApp();
-  return <NewsPageList lang={lang} />;
+  return <LandingNews />;
 }

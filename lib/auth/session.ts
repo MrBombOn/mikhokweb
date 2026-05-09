@@ -58,10 +58,9 @@ export async function signSessionToken(userId: string, role: AppRole): Promise<s
 }
 
 /**
- * JWT ellenőrzés – lejárt vagy hibás aláírás → `null`.
- * @param token – süti érték nyers string
+ * JWT ellenőrzés – `iat` az aktivitás-alapú session rotációhoz (`GET /api/auth/session`).
  */
-export async function verifySessionToken(token: string): Promise<SessionPayload | null> {
+export async function verifySessionTokenDetailed(token: string): Promise<(SessionPayload & { issuedAtSec: number }) | null> {
   try {
     const { payload } = await jwtVerify(token, getSessionSecretBytes(), { algorithms: ['HS256'] });
     const sub = payload.sub;
@@ -69,17 +68,36 @@ export async function verifySessionToken(token: string): Promise<SessionPayload 
     if (!sub || (role !== 'OFFICE' && role !== 'ADMIN')) {
       return null;
     }
-    return { sub, role };
+    const issuedAtSec =
+      typeof payload.iat === 'number' ? payload.iat : Math.floor(Date.now() / 1000);
+    return { sub, role, issuedAtSec };
   } catch {
     return null;
   }
 }
 
-/** `cookies().set()` közös opciói a session sütihez. */
+/**
+ * JWT ellenőrzés – lejárt vagy hibás aláírás → `null`.
+ * @param token – süti érték nyers string
+ */
+export async function verifySessionToken(token: string): Promise<SessionPayload | null> {
+  const d = await verifySessionTokenDetailed(token);
+  return d ? { sub: d.sub, role: d.role } : null;
+}
+
+/** `cookies().set()` közös opciói a session sütihez.
+ *
+ * - **httpOnly** – JS nem olvashatja (XSS ellen).
+ * - **sameSite: strict** – CSRF csökkentés cross-site POST ellen.
+ * - **secure** – élesben csak HTTPS-en küldjük a sütit.
+ * - **maxAge** – JWT `exp`-pel egyező abszolút lejárat; aktivitásra **rotáció**: `GET /api/auth/session`.
+ */
 export const sessionCookieBase = {
   httpOnly: true as const,
-  sameSite: 'lax' as const,
+  sameSite: 'strict' as const,
   path: '/',
   maxAge: SESSION_MAX_AGE_SEC,
-  secure: process.env.NODE_ENV === 'production',
+  /** Playwright E2E `next start` HTTP-n: `E2E_ALLOW_HTTP_COOKIES=1` (secure süti különben nem megy át). */
+  secure: process.env.NODE_ENV === 'production' && process.env.E2E_ALLOW_HTTP_COOKIES !== '1',
+  priority: 'high' as const,
 };

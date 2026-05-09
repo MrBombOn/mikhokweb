@@ -121,6 +121,58 @@ Fontos technikai és design döntések (master spec §24.2). Új bejegyzésnél 
 
 ---
 
+## D-2026-05-03-001 – Fázisolt mesterütemterv: Fázis 1 / About SSOT (i18n + CSS)
+
+| Mező | Tartalom |
+|------|----------|
+| **Téma** | Hol legyenek a Rólunk modul statikus szövegei és a layout stílusok a `phased-master-plan.md` Fázis 1 szerint |
+| **Alternatívák** | Marad a komponensben az inline `style` és `lang === 'hu' ? …`; külön `about/*.json`; **`lib/i18n/messages.ts` + `app/globals.css` osztályok** |
+| **Döntés** | **Szótár:** `messages.hu.about` / `messages.en.about` (azonos kulcsok) + `common.delete`; demó API mezők: `messages.hu` / `messages.en` párok (`demoMemberRoleHu` stb.). **Stílus:** `about-*` utility osztályok a `globals.css`-ben (tokenes `var(--space-*)`, `var(--radius-full)`). |
+| **Indoklás** | A fázisolt terv Fázis 1 első pontja (About) szerint egy helyen karbantartható a kétnyelvű szöveg és csökken az inline stílus; a következő modulok (gallery, guides, …) ugyanezt a mintát kapják. |
+| **Roadmap-hatás** | Fázis 1 soron következő tételei: Gallery, Guides, Calendar, Search/admin maradék inline |
+| **Érintett fájlok** | `lib/i18n/messages.ts`, `app/globals.css`, `components/modules/about/AboutModule.tsx` (Fázis 4: új útvonal; döntéskor: `components/about/`) |
+
+---
+
+## D-2026-05-03-002 – Go-live dokumentáció helye (Fázis 8)
+
+| Mező | Tartalom |
+|------|----------|
+| **Téma** | Hol legyen az éles indulás nem-funkcionális feladatlistája |
+| **Alternatívák** | Csak a `teljes-uzemeltetesi-kezikonyv.md` bővítése új fejezettel; **külön** `go-live-checklist.md` + rövid hivatkozás a kézikönyvben |
+| **Döntés** | **Külön** `docs/go-live-checklist.md` (táblázatos checklist, szerepkörök), és a kézikönyv **§9.0** linkkel erre hivatkozik; a dokumentációs indexben külön sor |
+| **Indoklás** | A go-live egyszeri / nagyobb lélegzetű lista nem mossa össze a napi release §9.1 folyamatával; könnyebb nyomtatni, PR-ben reviewolni és frissíteni |
+| **Roadmap-hatás** | Fázis 8 lezárt kimenet; jogi oldalak és lábléc linkek továbbra is implementációs feladat a checklist szerint |
+| **Érintett fájlok** | `docs/go-live-checklist.md`, `docs/teljes-uzemeltetesi-kezikonyv.md`, `docs/phased-master-plan.md`, `docs/documentation-index.md`, `docs/decision-log.md` |
+
+---
+
+## D-2026-05-03-003 – Lint parancs: ESLint CLI (Fázis 9)
+
+| Mező | Tartalom |
+|------|----------|
+| **Téma** | `next lint` deprecation és Next 16 kompatibilitás |
+| **Alternatívák** | Marad `next lint` a figyelmeztetéssel; **átállás** `eslint .`-re ugyanazzal a `eslint.config.mjs`-sel |
+| **Döntés** | **`npm run lint` = `eslint .`**; configban **globális ignores** (`.next`, `out`, …) + **`*.cjs`** override a `scripts/prisma-env.cjs` CommonJS `require` miatt; export **nevű konstans** az `import/no-anonymous-default-export` elkerülésére |
+| **Indoklás** | A Next hivatalosan a CLI-s lintet javasolja; az `eslint .` ignores nélkül a generált `.next` fájlokra is futna és hamis hibákat adna |
+| **Roadmap-hatás** | Fázis 9 lezárva; CI továbbra is `npm run lint` |
+| **Érintett fájlok** | `package.json`, `eslint.config.mjs`, `docs/eslint-cli-migration.md`, `docs/phased-master-plan.md`, `docs/documentation-index.md`, `docs/DOCUMENTATION_PROJECT_WORKFLOW.md`, `docs/decision-log.md`, `docs/progress-log.md` |
+
+---
+
+## D-2026-05-03-004 – LCP / külső képek: `next/image` + közös hostlista (Fázis 10)
+
+| Mező | Tartalom |
+|------|----------|
+| **Téma** | Maradék `<img>` külső URL-ek és `remotePatterns` karbantartása |
+| **Alternatívák** | Csak `<img>` + manuális `loading`; **next/image** + szűk `remotePatterns`; minden host engedélyezése (nem választjuk) |
+| **Döntés** | **`next/image`** a Galéria és About avatároknál, ha a host **`isRemoteImageHostOptimizable`** szerint szerepel; `getNextImageRemotePatterns()` ugyanabból a fájlból tölti a `next.config.ts` `images.remotePatterns` mezőt; ismeretlen host → **`<img loading="lazy">`** |
+| **Indoklás** | Jobb LCP / CLS és központi hostlista; új CDN esetén egy helyen (`lib/remote-image-hosts.ts`) bővítés + build |
+| **Roadmap-hatás** | Fázis 10 kész; további `<img>` keresés más modulokban külön kör |
+| **Érintett fájlok** | `lib/remote-image-hosts.ts`, `next.config.ts`, `components/gallery/GalleryModule.tsx`, `components/modules/about/AboutModule.tsx`, `styles/modules/gallery.css`, `docs/lighthouse-baseline.md`, `docs/phased-master-plan.md`, `docs/decision-log.md`, `docs/progress-log.md` |
+
+---
+
 ### Sablon (másolás új döntéshez)
 
 ```

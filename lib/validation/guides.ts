@@ -22,12 +22,12 @@ export const patchGuideSchema = createGuideSchema.partial();
 
 export type CreateGuideInput = z.infer<typeof createGuideSchema>;
 
-/** Üres / null → undefined; egyébként trim; http(s) kell, különben null vissza = hiba jel. */
+/** Üres / null → undefined; egyébként trim; http(s) vagy relatív (/...) URL engedett. */
 export function parseOptionalHttpUrl(raw: string | null | undefined): string | null | undefined | 'invalid' {
   if (raw === null) return null;
   if (raw === undefined) return undefined;
   const t = raw.trim();
   if (t === '') return undefined;
-  if (!/^https?:\/\//i.test(t)) return 'invalid';
+  if (!/^https?:\/\//i.test(t) && !t.startsWith('/')) return 'invalid';
   return t;
 }

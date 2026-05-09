@@ -1,0 +1,65 @@
+/**
+ * About modul – Fázis 1 SSOT (tokenes layout)
+ * Import: app/globals.css (@import sorrend)
+ */
+.about-narratives-grid {
+  margin-bottom: var(--space-7);
+}
+.about-narrative-title {
+  margin-top: 0;
+}
+.about-narrative-body {
+  margin: 0;
+  color: var(--muted);
+  white-space: pre-wrap;
+}
+.about-members-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+.about-members-heading {
+  margin: 0;
+  font-size: 1.15rem;
+}
+.about-group-block {
+  margin-bottom: var(--space-7);
+}
+.about-group-title {
+  margin: 0 0 var(--space-3) 0;
+  font-size: 1rem;
+  color: var(--muted);
+}
+.about-avatar-img {
+  display: block;
+  width: 62px;
+  height: 62px;
+  margin-bottom: var(--space-4);
+  border-radius: var(--radius-full);
+  object-fit: cover;
+}
+.about-avatar-placeholder {
+  width: 62px;
+  height: 62px;
+  margin-bottom: var(--space-4);
+  border-radius: var(--radius-full);
+  background: var(--accent);
+}
+.about-member-name {
+  margin: 0 0 var(--space-2) 0;
+}
+.about-member-role {
+  margin: 0 0 var(--space-3) 0;
+  color: var(--muted);
+}
+.about-member-bio {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+  white-space: pre-wrap;
+}
+.about-member-admin {
+  margin-top: var(--space-3);
+}

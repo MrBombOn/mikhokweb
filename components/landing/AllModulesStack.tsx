@@ -5,7 +5,7 @@ import { LandingNews } from '@/components/landing/LandingNews';
 import { CalendarModule } from '@/components/calendar/CalendarModule';
 import { GalleryModule } from '@/components/gallery/GalleryModule';
 import { GuidesModule } from '@/components/guides/GuidesModule';
-import { AboutModule } from '@/components/about/AboutModule';
+import { AboutModule } from '@/components/modules/about/AboutModule';
 import { OfficeModule } from '@/components/office/OfficeModule';
 import { CalculatorModule } from '@/components/calculator/CalculatorModule';
 

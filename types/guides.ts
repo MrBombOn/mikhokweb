@@ -15,6 +15,10 @@ export type GuideDto = {
   keywords: string;
   documentUrl?: string;
   documentType?: string;
+  attachmentName?: string;
+  attachmentMime?: string;
+  attachmentSizeBytes?: number;
+  searchableText: string;
   listDate: string;
   status: GuideItemStatus;
 };

@@ -1,40 +1,44 @@
 /**
- * @file Lábléc – statikus linkek és rövid szervezeti szöveg
- *
- * @description
- * **Szerverkomponens** (nincs `'use client'`), mert nincs interaktív állapot.
- * A linkek a fő modulokra mutatnak; a szövegek jelenleg magyarul fixek (később
- * `t(lang)`-re vihetők, ha a lábléc is kétnyelvű lesz).
+ * @file Lábléc – linkek és szöveg SSOT (`messages.footer`, `messages.nav`)
  */
+'use client';
+
 import Link from 'next/link';
 import { BrandMark } from '@/components/brand/BrandMark';
+import { useApp } from '@/components/layout/AppProvider';
+import { t } from '@/lib/content';
 
 export function Footer() {
+  const { lang } = useApp();
+  const dict = t(lang);
+  const f = dict.footer;
+  const n = dict.nav;
+
   return (
     <footer className="footer">
       <div className="app-shell footer-inner">
         <div>
           <div className="footer-brand-row">
-            <BrandMark variant="footer" aria-label="PTE MIK HÖK" />
+            <BrandMark variant="footer" aria-label={n.brandHomeAria} />
           </div>
-          <p className="footer-brand-lead">
-            Hallgatói tájékoztatás, közösségi információk és adminisztratív tartalmak egy egységes webes felületen.
-          </p>
+          <p className="footer-brand-lead">{f.lead}</p>
         </div>
         <div>
-          <strong>Fő részek</strong>
-          <div className="stack" style={{ marginTop: 12 }}>
-            <Link href="/news">Hírek</Link>
-            <Link href="/calendar">Naptár</Link>
-            <Link href="/calculator">KKI kalkulátor</Link>
-            <Link href="/gallery">Galéria</Link>
+          <strong>{f.mainSections}</strong>
+          <div className="stack footer-link-stack">
+            <Link href="/calendar">{n.calendar}</Link>
+            <Link href="/calculator">{n.calculator}</Link>
+            <Link href="/gallery">{n.gallery}</Link>
           </div>
         </div>
         <div>
-          <strong>További oldalak</strong>
-          <div className="stack" style={{ marginTop: 12 }}>
-            <Link href="/guides">Útmutatók</Link>
-            <Link href="/about">About Us</Link>
+          <strong>{f.morePages}</strong>
+          <div className="stack footer-link-stack">
+            <Link href="/search">{n.search}</Link>
+            <Link href="/guides">{n.guides}</Link>
+            <Link href="/about">{n.about}</Link>
+            <Link href="/office">{n.office}</Link>
+            <Link href="/privacy">{n.privacy}</Link>
           </div>
         </div>
       </div>

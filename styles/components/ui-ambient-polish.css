@@ -1,0 +1,179 @@
+/**
+ * @file Globális vizuális és motion finomhangolás (LCP-barát: opacity + transform).
+ * @description Első festés utáni `main` belépő, FAB, toast, keresési kártyák, üres/hiba állapot, cookie sáv.
+ * A `prefers-reduced-motion: reduce` általános kezelése: `skeleton-states-toast.css` (globális * anim/transition off).
+ */
+
+@keyframes ui-main-shell-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes ui-toast-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes ui-cookie-bar-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 20px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/** Első dokumentumfestés: a gyökér `main` finom belépése (CSR navigáción a layout nem újrafestődik teljesen). */
+main#main-content {
+  animation: ui-main-shell-in 0.48s var(--ease-spring-out) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  main#main-content {
+    animation: none !important;
+  }
+}
+
+/** „Lap tetejére” — mindig a DOM-ban (nincs mount/unmount ugrás); láthatóság + fókusz SSOT a komponensben. */
+.pte-page-up-control {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translate3d(0, 18px, 0) scale(0.92);
+  transition:
+    opacity 0.28s var(--ease-out),
+    transform 0.38s var(--ease-spring-out),
+    box-shadow var(--transition),
+    visibility 0s linear 0.38s;
+}
+
+.pte-page-up-control--visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translate3d(0, 0, 0) scale(1);
+  transition-delay: 0s, 0s, 0s, 0s;
+}
+
+.pte-page-up-control--visible:hover {
+  transform: translate3d(0, -2px, 0) scale(1.03);
+  box-shadow: var(--fx-shadow-accent-hover);
+}
+
+.pte-page-up-control--visible:active {
+  transform: translate3d(0, 1px, 0) scale(0.98);
+  transition-duration: 0.12s;
+}
+
+/** Keresés: kattintható találat kártyák */
+.search-result-card {
+  transition:
+    transform 0.22s var(--ease-out),
+    box-shadow 0.24s var(--ease-out),
+    border-color var(--transition);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .search-result-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+    border-color: color-mix(in srgb, var(--primary) 34%, var(--line));
+  }
+}
+
+.search-result-card:active {
+  transform: translateY(-1px) scale(0.995);
+  transition-duration: 0.1s;
+}
+
+/** Szűrő chip: billentyűzet / egér visszajelzés */
+.filter-chip {
+  transition:
+    transform 0.18s var(--ease-out),
+    box-shadow 0.22s var(--ease-out),
+    background var(--transition),
+    border-color var(--transition),
+    color var(--transition);
+}
+
+.filter-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-xs);
+}
+
+.filter-chip:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.filter-chip--selected {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 35%, transparent);
+}
+
+/** Üres állapot: üveg + szegély, a hibaállapot piros keretét a `skeleton-states-toast.css` SSOT hagyja */
+.empty-state {
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  background:
+    var(--fx-surface-card) padding-box,
+    var(--fx-border-soft) border-box;
+  box-shadow: var(--shadow-xs);
+  transition: box-shadow var(--transition), transform var(--transition);
+}
+
+.error-state {
+  border-radius: var(--radius-md);
+  transition: box-shadow var(--transition);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .empty-state:hover {
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-2px);
+  }
+
+  .error-state:hover {
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--danger) 22%, transparent), var(--shadow-sm);
+  }
+}
+
+/** Toast: rövid belépő a stack minden új elemére */
+.toast-stack .toast {
+  animation: ui-toast-in 0.32s var(--ease-spring-out) both;
+}
+
+/** Cookie sáv: alsó behúzás */
+.cookie-consent-bar {
+  animation: ui-cookie-bar-in 0.42s var(--ease-spring-out) both;
+}
+
+/** Hírfolyam pill + badge: finom hover */
+.feed-pill,
+.badge {
+  transition:
+    transform 0.2s var(--ease-out),
+    box-shadow 0.22s var(--ease-out),
+    filter 0.2s var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .feed-pill:hover,
+  .badge:hover {
+    transform: translateY(-1px);
+    filter: saturate(1.06);
+    box-shadow: var(--shadow-xs);
+  }
+}

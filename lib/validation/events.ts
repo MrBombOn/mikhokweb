@@ -12,6 +12,11 @@ export const createEventSchema = z.object({
   dayLabel: z.string().max(50).optional().nullable().transform((s) => s?.trim() || undefined),
   note: z.string().max(2000).optional().nullable().transform((s) => s?.trim() || undefined),
   status: writableEventStatus.default('published'),
+  /**
+   * P5: ismétlődő esemény gyors létrehozás (heti ismétlés száma).
+   * `0` vagy hiányzó = csak egyszeri esemény.
+   */
+  repeatWeeklyCount: z.number().int().min(0).max(12).optional().default(0),
 });
 
 export const patchEventSchema = createEventSchema.partial();

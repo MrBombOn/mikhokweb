@@ -6,6 +6,7 @@ import { canManageNews, getCurrentUser } from '@/lib/auth/current-user';
 import { patchNewsSchema } from '@/features/news/schema';
 import { newsRowToItem } from '@/features/news/mapper';
 import { canReadNewsItem, getNewsItemById, parseNewsId, softDeleteNewsItem, updateNewsItem } from '@/features/news/server';
+import { apiRequestLog } from '@/lib/observability/api-request-log';
 import { enforceSameOrigin } from '@/lib/security/csrf';
 import { writeAudit } from '@/lib/audit/write-audit';
 
@@ -32,38 +33,55 @@ export async function GET(_request: Request, context: RouteContext) {
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
+  const log = apiRequestLog(request, 'api.news.patch');
   const csrf = enforceSameOrigin(request);
-  if (csrf) return csrf;
+  if (csrf) return log.wrap(csrf);
 
   const user = await getCurrentUser();
   if (!user || !canManageNews(user.role)) {
-    return NextResponse.json({ error: 'Nincs jogosultság.' }, { status: 403 });
+    return log.wrap(NextResponse.json({ error: 'Nincs jogosultság.' }, { status: 403 }));
   }
 
   const { id: raw } = await context.params;
   const id = parseNewsId(raw);
   if (id == null) {
-    return NextResponse.json({ error: 'Érvénytelen azonosító.' }, { status: 400 });
+    return log.wrap(NextResponse.json({ error: 'Érvénytelen azonosító.' }, { status: 400 }));
   }
 
   let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: 'Érvénytelen JSON.' }, { status: 400 });
+    return log.wrap(NextResponse.json({ error: 'Érvénytelen JSON.' }, { status: 400 }));
   }
 
   const parsed = patchNewsSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Validációs hiba', details: parsed.error.flatten() }, { status: 400 });
+    return log.wrap(NextResponse.json({ error: 'Validációs hiba', details: parsed.error.flatten() }, { status: 400 }));
   }
 
   const existing = await getNewsItemById(id);
   if (!existing) {
-    return NextResponse.json({ error: 'Nem található.' }, { status: 404 });
+    return log.wrap(NextResponse.json({ error: 'Nem található.' }, { status: 404 }));
   }
 
-  const row = await updateNewsItem(id, parsed.data);
+  const updated = await updateNewsItem(id, parsed.data, user.id);
+  if (!updated.ok) {
+    if (updated.code === 'not_found') {
+      return log.wrap(NextResponse.json({ error: 'Nem található.' }, { status: 404 }));
+    }
+    return log.wrap(
+      NextResponse.json(
+        {
+          error: 'Közzétételhez add meg a borító alternatív szövegét HU és EN nyelven.',
+          code: 'publish_requires_alt',
+        },
+        { status: 400 },
+      ),
+    );
+  }
+
+  const row = updated.item;
   await writeAudit({
     actor: user,
     action: 'patch_news',
@@ -72,27 +90,30 @@ export async function PATCH(request: Request, context: RouteContext) {
     details: `fields=${Object.keys(parsed.data).join(',')}`,
   });
 
-  return NextResponse.json({ item: row });
+  log.info('news_patched', { actorId: user.id, newsId: id });
+  return log.wrap(NextResponse.json({ item: row }));
 }
 
+
 export async function DELETE(request: Request, context: RouteContext) {
+  const log = apiRequestLog(request, 'api.news.delete');
   const csrf = enforceSameOrigin(request);
-  if (csrf) return csrf;
+  if (csrf) return log.wrap(csrf);
 
   const user = await getCurrentUser();
   if (!user || !canManageNews(user.role)) {
-    return NextResponse.json({ error: 'Nincs jogosultság.' }, { status: 403 });
+    return log.wrap(NextResponse.json({ error: 'Nincs jogosultság.' }, { status: 403 }));
   }
 
   const { id: raw } = await context.params;
   const id = parseNewsId(raw);
   if (id == null) {
-    return NextResponse.json({ error: 'Érvénytelen azonosító.' }, { status: 400 });
+    return log.wrap(NextResponse.json({ error: 'Érvénytelen azonosító.' }, { status: 400 }));
   }
 
   const existing = await getNewsItemById(id);
   if (!existing) {
-    return NextResponse.json({ error: 'Nem található.' }, { status: 404 });
+    return log.wrap(NextResponse.json({ error: 'Nem található.' }, { status: 404 }));
   }
 
   await softDeleteNewsItem(id);
@@ -104,5 +125,6 @@ export async function DELETE(request: Request, context: RouteContext) {
     details: `status=${existing.status}->deleted`,
   });
 
-  return NextResponse.json({ ok: true });
+  log.info('news_deleted', { actorId: user.id, newsId: id });
+  return log.wrap(NextResponse.json({ ok: true }));
 }

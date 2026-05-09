@@ -16,5 +16,10 @@ export type GalleryItemDto = {
   /** YYYY-MM-DD */
   date: string;
   imageUrl: string;
+  thumbnailUrl: string;
+  imageWidth: number | null;
+  imageHeight: number | null;
+  mimeType: string | null;
+  fileSizeBytes: number | null;
   status: GalleryItemStatus;
 };

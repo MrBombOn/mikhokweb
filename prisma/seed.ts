@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { rebuildSearchIndex } from '@/lib/search/rebuild-index';
 
 const prisma = new PrismaClient();
 
@@ -36,6 +37,9 @@ async function main() {
       author: 'MIK HÖK',
       cover: 'blue',
       hasCover: true,
+      slug: 'tavaszi-kari-forum',
+      coverAltHu: 'Hallgatók a kari fórumon',
+      coverAltEn: 'Students at the faculty forum',
       scheduledFor: null as string | null,
       externalUrl: null as string | null,
     },
@@ -53,6 +57,9 @@ async function main() {
       author: 'Facebook feed',
       cover: 'pink',
       hasCover: true,
+      slug: 'facebook-bejegyzes-kozossegi-program',
+      coverAltHu: 'Közösségi program illusztráció',
+      coverAltEn: 'Community program illustration',
       scheduledFor: null as string | null,
       externalUrl: 'https://facebook.com',
     },
@@ -70,6 +77,9 @@ async function main() {
       author: 'Instagram feed',
       cover: 'pink',
       hasCover: true,
+      slug: 'instagram-feed-esemenyfotok',
+      coverAltHu: 'Esemény fotó összefoglaló',
+      coverAltEn: 'Event photo recap',
       scheduledFor: null as string | null,
       externalUrl: 'https://instagram.com',
     },
@@ -92,6 +102,9 @@ async function main() {
         author: n.author,
         cover: n.cover,
         hasCover: n.hasCover,
+        slug: n.slug,
+        coverAltHu: n.coverAltHu,
+        coverAltEn: n.coverAltEn,
         scheduledFor: n.scheduledFor,
         externalUrl: n.externalUrl,
       },
@@ -512,6 +525,8 @@ async function main() {
       },
     });
   }
+
+  await rebuildSearchIndex();
 }
 
 main()

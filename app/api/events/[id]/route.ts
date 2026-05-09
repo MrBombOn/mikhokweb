@@ -10,6 +10,7 @@ import {
   softDeleteCalendarEvent,
 } from '@/features/events/server';
 import { patchEventSchema } from '@/lib/validation/events';
+import { apiRequestLog } from '@/lib/observability/api-request-log';
 import { enforceSameOrigin } from '@/lib/security/csrf';
 import { writeAudit } from '@/lib/audit/write-audit';
 
@@ -32,35 +33,36 @@ export async function GET(_request: Request, context: RouteContext) {
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
+  const log = apiRequestLog(request, 'api.events.patch');
   const csrf = enforceSameOrigin(request);
-  if (csrf) return csrf;
+  if (csrf) return log.wrap(csrf);
 
   const user = await getCurrentUser();
   if (!user || !canManageNews(user.role)) {
-    return NextResponse.json({ error: 'Nincs jogosultság.' }, { status: 403 });
+    return log.wrap(NextResponse.json({ error: 'Nincs jogosultság.' }, { status: 403 }));
   }
 
   const { id: raw } = await context.params;
   const id = parseEventId(raw);
   if (id == null) {
-    return NextResponse.json({ error: 'Érvénytelen azonosító.' }, { status: 400 });
+    return log.wrap(NextResponse.json({ error: 'Érvénytelen azonosító.' }, { status: 400 }));
   }
 
   let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: 'Érvénytelen JSON.' }, { status: 400 });
+    return log.wrap(NextResponse.json({ error: 'Érvénytelen JSON.' }, { status: 400 }));
   }
 
   const parsed = patchEventSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Validációs hiba', details: parsed.error.flatten() }, { status: 400 });
+    return log.wrap(NextResponse.json({ error: 'Validációs hiba', details: parsed.error.flatten() }, { status: 400 }));
   }
 
   const result = await patchCalendarEvent(id, parsed.data);
   if (!result.ok) {
-    return NextResponse.json({ error: result.error ?? 'Hiba.' }, { status: result.status });
+    return log.wrap(NextResponse.json({ error: result.error ?? 'Hiba.' }, { status: result.status }));
   }
   await writeAudit({
     actor: user,
@@ -70,27 +72,29 @@ export async function PATCH(request: Request, context: RouteContext) {
     details: `fields=${Object.keys(parsed.data).join(',')}`,
   });
 
-  return NextResponse.json({ item: result.item });
+  log.info('calendar_event_patched', { actorId: user.id, eventId: id });
+  return log.wrap(NextResponse.json({ item: result.item }));
 }
 
 export async function DELETE(request: Request, context: RouteContext) {
+  const log = apiRequestLog(request, 'api.events.delete');
   const csrf = enforceSameOrigin(request);
-  if (csrf) return csrf;
+  if (csrf) return log.wrap(csrf);
 
   const user = await getCurrentUser();
   if (!user || !canManageNews(user.role)) {
-    return NextResponse.json({ error: 'Nincs jogosultság.' }, { status: 403 });
+    return log.wrap(NextResponse.json({ error: 'Nincs jogosultság.' }, { status: 403 }));
   }
 
   const { id: raw } = await context.params;
   const id = parseEventId(raw);
   if (id == null) {
-    return NextResponse.json({ error: 'Érvénytelen azonosító.' }, { status: 400 });
+    return log.wrap(NextResponse.json({ error: 'Érvénytelen azonosító.' }, { status: 400 }));
   }
 
   const result = await softDeleteCalendarEvent(id);
   if (!result.ok) {
-    return NextResponse.json({ error: 'Nem található.' }, { status: result.status });
+    return log.wrap(NextResponse.json({ error: 'Nem található.' }, { status: result.status }));
   }
   await writeAudit({
     actor: user,
@@ -99,5 +103,6 @@ export async function DELETE(request: Request, context: RouteContext) {
     entityId: String(id),
   });
 
-  return NextResponse.json({ ok: true });
+  log.info('calendar_event_deleted', { actorId: user.id, eventId: id });
+  return log.wrap(NextResponse.json({ ok: true }));
 }

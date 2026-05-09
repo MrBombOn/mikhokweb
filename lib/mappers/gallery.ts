@@ -17,6 +17,11 @@ export function galleryItemToDto(row: GalleryItem): GalleryItemDto {
     titleEn: row.titleEn,
     date: row.listDate,
     imageUrl: row.imageUrl,
+    thumbnailUrl: row.thumbnailUrl,
+    imageWidth: row.imageWidth,
+    imageHeight: row.imageHeight,
+    mimeType: row.mimeType,
+    fileSizeBytes: row.fileSizeBytes,
     status: row.status as GalleryItemStatus,
   };
 }

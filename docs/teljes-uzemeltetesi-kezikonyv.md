@@ -200,7 +200,9 @@ Fő technológia:
 
 - Audit log mintavételes ellenőrzés
 - Rate limit események áttekintése
-- Hibalogok vizsgálata
+- Hibalogok vizsgálata (JSON `event` mező; `requestId` / `x-request-id` koreláció kritikus írásoknál; részletek: `docs/incident-debug.md`, riasztási minták: `docs/alerting-rules.md`)
+- Opcionális: `npm run ops:health-check` ütemezve (lásd `docs/scheduled-health-routine.md`); backup drill: `docs/backup-restore-drill.md`
+- Sentry (ha aktív DSN): új issue trend és release regresszió
 - Biztonsági és jogosultsági gyorsellenőrzés
 
 ## 6.3 Havi checks
@@ -251,6 +253,10 @@ Fő technológia:
 ---
 
 ## 9. Kiadási modell (release operation)
+
+### 9.0 Go-live (első éles indulás)
+
+Az **első produkciós domainre** lépéshez (DNS, TLS, backup, monitoring, jogi oldalak, lábléc, deploy nap) részletes, szerepkörökre bontott lista: **[`docs/go-live-checklist.md`](./go-live-checklist.md)** — a [`phased-master-plan.md`](./phased-master-plan.md) **Fázis 8** kimenete; DoD és kapcsolódó linkek a checklist elején / végén. A napi / ismétlődő kiadások továbbra is az alábbi §9.1 szerint zajlanak.
 
 ## 9.1 Release checklist
 
@@ -320,6 +326,7 @@ Fő technológia:
 - Biztonság: `docs/security-audit.md`
 - Tesztelés: `docs/testing.md`
 - Üzemeltetési incidens: `docs/incident-debug.md`
+- Első éles indulás: `docs/go-live-checklist.md`
 - Végső audit: `docs/final-frontend-backend-audit.md`
 - Laikus magyarázó: `docs/laikus-kodmagyarazo.md`
 

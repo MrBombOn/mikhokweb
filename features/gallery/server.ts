@@ -1,4 +1,4 @@
-import type { Prisma, UserRole } from '@prisma/client';
+import { Prisma, type UserRole } from '@prisma/client';
 import { prisma } from '@/lib/db';
 import { canManageNews } from '@/lib/auth/current-user';
 import { galleryFolderToDto, galleryItemToDto } from '@/lib/mappers/gallery';
@@ -43,6 +43,12 @@ export async function createGalleryItem(data: CreateGalleryItemInput) {
       titleEn: data.titleEn,
       listDate: data.listDate,
       imageUrl: data.imageUrl,
+      thumbnailUrl: '',
+      imageWidth: null,
+      imageHeight: null,
+      mimeType: null,
+      fileSizeBytes: null,
+      exifJson: Prisma.JsonNull,
       status: data.status,
       sortOrder: data.sortOrder,
     },
@@ -86,6 +92,14 @@ export async function patchGalleryItem(id: number, patch: PatchGalleryInput) {
   if (patch.titleEn !== undefined) updateData.titleEn = patch.titleEn;
   if (patch.listDate !== undefined) updateData.listDate = patch.listDate;
   if (patch.imageUrl !== undefined) updateData.imageUrl = patch.imageUrl;
+  if (patch.imageUrl !== undefined && patch.imageUrl.trim() === '') {
+    updateData.thumbnailUrl = '';
+    updateData.imageWidth = null;
+    updateData.imageHeight = null;
+    updateData.mimeType = null;
+    updateData.fileSizeBytes = null;
+    updateData.exifJson = Prisma.JsonNull;
+  }
   if (patch.status !== undefined) updateData.status = patch.status;
   if (patch.sortOrder !== undefined) updateData.sortOrder = patch.sortOrder;
 

@@ -1,12 +1,17 @@
 'use client';
 
-import { AllModulesStack } from '@/components/landing/AllModulesStack';
+import { CalendarModule } from '@/components/calendar/CalendarModule';
+import { MotionReveal } from '@/components/ui/MotionReveal';
 import { PublicPageShell } from '@/components/layout/PublicPageShell';
 
 export function CalendarPageClient() {
   return (
     <PublicPageShell>
-      <AllModulesStack primary="calendar" />
+      <div className="module-page-frame">
+        <MotionReveal className="module-page-motion">
+          <CalendarModule />
+        </MotionReveal>
+      </div>
     </PublicPageShell>
   );
 }

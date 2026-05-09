@@ -1,22 +1,21 @@
 /**
  * @file Globális betöltő UI (App Router `loading.tsx`)
- *
- * @description
- * Amikor egy útvonal **aszinkron adatot** vagy **lassú szerverkomponenst** tölt,
- * a Next.js automatikusan megjeleníti ezt a fájl exportját a `children` helyén
- * (Suspense határ nélkül is, route szinten).
- *
- * @akadálymentesség
- * - `aria-busy="true"`: képernyőolvasók számára jelezzük, hogy tartalom töltődik.
- * - `aria-live="polite"`: változás bejelentése nem vágja félbe a felhasználót.
  */
+'use client';
+
+import { useApp } from '@/components/layout/AppProvider';
+import { t } from '@/lib/content';
+
 export default function Loading() {
+  const { lang } = useApp();
+  const s = t(lang).systemShell;
+
   return (
     <div className="app-shell section state-shell" aria-busy="true" aria-live="polite">
       <div className="card state-card">
-        <p className="state-eyebrow">Betöltés</p>
-        <h2 className="state-title">Kis türelmet</h2>
-        <p className="state-text">Az oldal tartalma éppen frissül, hamarosan megjelenik.</p>
+        <p className="state-eyebrow">{s.loadingEyebrow}</p>
+        <h2 className="state-title">{s.loadingTitle}</h2>
+        <p className="state-text">{s.loadingText}</p>
       </div>
     </div>
   );

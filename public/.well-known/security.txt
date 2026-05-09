@@ -1,0 +1,6 @@
+Contact: mailto:security@example.invalid
+Expires: 2027-12-31T23:59:59.000Z
+Preferred-Languages: hu, en
+
+# Éles indulás előtt: cseréld a Contact sort a szervezet valós címére.
+# Folyamat: docs/security-disclosure.md

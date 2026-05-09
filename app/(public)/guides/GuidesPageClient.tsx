@@ -1,12 +1,17 @@
 'use client';
 
-import { AllModulesStack } from '@/components/landing/AllModulesStack';
+import { GuidesModule } from '@/components/guides/GuidesModule';
 import { PublicPageShell } from '@/components/layout/PublicPageShell';
+import { MotionReveal } from '@/components/ui/MotionReveal';
 
 export function GuidesPageClient() {
   return (
     <PublicPageShell>
-      <AllModulesStack primary="guides" />
+      <div className="module-page-frame">
+        <MotionReveal className="module-page-motion">
+          <GuidesModule />
+        </MotionReveal>
+      </div>
     </PublicPageShell>
   );
 }

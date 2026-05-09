@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server';
 import { canManageNews, getCurrentUser } from '@/lib/auth/current-user';
 import { getGuideDto, parseGuideId, patchGuideItem, softDeleteGuideItem } from '@/features/guides/server';
 import { patchGuideSchema } from '@/lib/validation/guides';
+import { apiRequestLog } from '@/lib/observability/api-request-log';
 import { enforceSameOrigin } from '@/lib/security/csrf';
 import { writeAudit } from '@/lib/audit/write-audit';
 
@@ -27,35 +28,36 @@ export async function GET(_request: Request, context: RouteContext) {
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
+  const log = apiRequestLog(request, 'api.guides.patch');
   const csrf = enforceSameOrigin(request);
-  if (csrf) return csrf;
+  if (csrf) return log.wrap(csrf);
 
   const user = await getCurrentUser();
   if (!user || !canManageNews(user.role)) {
-    return NextResponse.json({ error: 'Nincs jogosultság.' }, { status: 403 });
+    return log.wrap(NextResponse.json({ error: 'Nincs jogosultság.' }, { status: 403 }));
   }
 
   const { id: raw } = await context.params;
   const id = parseGuideId(raw);
   if (id == null) {
-    return NextResponse.json({ error: 'Érvénytelen azonosító.' }, { status: 400 });
+    return log.wrap(NextResponse.json({ error: 'Érvénytelen azonosító.' }, { status: 400 }));
   }
 
   let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: 'Érvénytelen JSON.' }, { status: 400 });
+    return log.wrap(NextResponse.json({ error: 'Érvénytelen JSON.' }, { status: 400 }));
   }
 
   const parsed = patchGuideSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Validációs hiba', details: parsed.error.flatten() }, { status: 400 });
+    return log.wrap(NextResponse.json({ error: 'Validációs hiba', details: parsed.error.flatten() }, { status: 400 }));
   }
 
   const result = await patchGuideItem(id, parsed.data);
   if (!result.ok) {
-    return NextResponse.json({ error: result.error ?? 'Hiba.' }, { status: result.status });
+    return log.wrap(NextResponse.json({ error: result.error ?? 'Hiba.' }, { status: result.status }));
   }
   await writeAudit({
     actor: user,
@@ -65,27 +67,29 @@ export async function PATCH(request: Request, context: RouteContext) {
     details: `fields=${Object.keys(parsed.data).join(',')}`,
   });
 
-  return NextResponse.json({ item: result.item });
+  log.info('guide_patched', { actorId: user.id, guideId: id });
+  return log.wrap(NextResponse.json({ item: result.item }));
 }
 
 export async function DELETE(request: Request, context: RouteContext) {
+  const log = apiRequestLog(request, 'api.guides.delete');
   const csrf = enforceSameOrigin(request);
-  if (csrf) return csrf;
+  if (csrf) return log.wrap(csrf);
 
   const user = await getCurrentUser();
   if (!user || !canManageNews(user.role)) {
-    return NextResponse.json({ error: 'Nincs jogosultság.' }, { status: 403 });
+    return log.wrap(NextResponse.json({ error: 'Nincs jogosultság.' }, { status: 403 }));
   }
 
   const { id: raw } = await context.params;
   const id = parseGuideId(raw);
   if (id == null) {
-    return NextResponse.json({ error: 'Érvénytelen azonosító.' }, { status: 400 });
+    return log.wrap(NextResponse.json({ error: 'Érvénytelen azonosító.' }, { status: 400 }));
   }
 
   const result = await softDeleteGuideItem(id);
   if (!result.ok) {
-    return NextResponse.json({ error: 'Nem található.' }, { status: result.status });
+    return log.wrap(NextResponse.json({ error: 'Nem található.' }, { status: result.status }));
   }
   await writeAudit({
     actor: user,
@@ -94,5 +98,6 @@ export async function DELETE(request: Request, context: RouteContext) {
     entityId: String(id),
   });
 
-  return NextResponse.json({ ok: true });
+  log.info('guide_deleted', { actorId: user.id, guideId: id });
+  return log.wrap(NextResponse.json({ ok: true }));
 }

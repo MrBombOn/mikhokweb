@@ -2,6 +2,8 @@
 
 export type BookingStatus = 'pending' | 'approved' | 'rejected';
 
+export type CalendarEventStatus = 'draft' | 'scheduled' | 'published' | 'archived' | 'deleted';
+
 export type CalendarEventItem = {
   id: number;
   titleHu: string;
@@ -12,6 +14,8 @@ export type CalendarEventItem = {
   category: string;
   dayLabel: string;
   note?: string;
+  /** API / admin lista; vendég nézetben tipikusan `published`. */
+  status?: CalendarEventStatus;
 };
 
 export type GymBookingItem = {

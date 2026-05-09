@@ -4,7 +4,7 @@ Ez a fájl a workflow dokumentáció docs-alatti elérési pontja.
 
 ## Hol van a teljes workflow leírás?
 
-- Elsődleges történeti/operatív leírás: `DOCUMENTATION_PROJECT_WORKFLOW.md` (repository gyökér)
+- Elsődleges történeti/operatív leírás: [`DOCUMENTATION_PROJECT_WORKFLOW.md`](./DOCUMENTATION_PROJECT_WORKFLOW.md) (`docs/` alatt). Régi gyökér URL: rövid átirányító a [`../DOCUMENTATION_PROJECT_WORKFLOW.md`](../DOCUMENTATION_PROJECT_WORKFLOW.md) stubban.
 
 ## Miért van ez a fájl?
 

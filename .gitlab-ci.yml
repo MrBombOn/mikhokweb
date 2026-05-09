@@ -1,4 +1,4 @@
-# GitLab mirror / primary: lint + production build (same checks as GitHub Actions)
+# GitLab mirror / primary: split verify pipeline
 image: node:22-alpine
 
 variables:
@@ -12,12 +12,79 @@ cache:
     - .npm/
 
 stages:
-  - verify
+  - lint
+  - typecheck
+  - test
+  - e2e
+  - build
+  - lighthouse
+  - release-checklist
 
-lint-and-build:
-  stage: verify
+lint:
+  stage: lint
   script:
     - npm ci
     - npm run lint
+
+typecheck:
+  stage: typecheck
+  script:
+    - npm ci
+    - npm run typecheck
+
+test:
+  stage: test
+  script:
+    - npm ci
+    # Fázis 16: audit + SBOM artifact; ne törje a teszt jobot
+    - npm run ops:audit-report || true
+    - npm run ops:sbom || true
+    - npx prisma migrate deploy
+    - npm run ops:backup-drill
     - npm run test
+  artifacts:
+    when: always
+    paths:
+      - .ops/npm-audit-report.json
+      - .ops/sbom.cdx.json
+    expire_in: 14 days
+
+e2e:
+  stage: e2e
+  image: node:22-bullseye
+  variables:
+    CI: "true"
+  script:
+    - npm ci
+    - npx playwright install --with-deps chromium
     - npm run build
+    - npm run test:e2e
+
+build:
+  stage: build
+  needs: [e2e]
+  script:
+    - npm ci
+    - npm run ops:dependency-risk
+    - npm run build
+    - npm run ops:smoke-gate
+
+lighthouse:
+  stage: lighthouse
+  # Alpine alatt a Chromium + font stack összeállítása hosszabb; P10-ben finomhangolható.
+  image: node:22-bullseye
+  script:
+    - npm ci
+    - npx prisma migrate deploy
+    - npm run build
+    - npm run lhci
+
+release_checklist:
+  stage: release-checklist
+  image: node:22-bullseye
+  variables:
+    FF_LIGHTHOUSE_CI_GATE: "1"
+  script:
+    - npm ci
+    - npx prisma migrate deploy
+    - npm run ops:release-checklist

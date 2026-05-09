@@ -7,6 +7,8 @@ import { createNewsSchema } from '@/features/news/schema';
 import { createNewsItem, listNewsForRole } from '@/features/news/server';
 import { enforceSameOrigin } from '@/lib/security/csrf';
 import { writeAudit } from '@/lib/audit/write-audit';
+import { serverLogger } from '@/lib/observability/server-logger';
+import { getRequestId, withRequestId } from '@/lib/observability/request-context';
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -15,28 +17,56 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const requestId = getRequestId(request);
   const csrf = enforceSameOrigin(request);
-  if (csrf) return csrf;
+  if (csrf) return withRequestId(csrf, requestId);
 
   const user = await getCurrentUser();
   if (!user || !canManageNews(user.role)) {
-    return NextResponse.json({ error: 'Nincs jogosultság.' }, { status: 403 });
+    serverLogger.warn('news_create_forbidden', { scope: 'api.news.post', requestId });
+    return withRequestId(NextResponse.json({ error: 'Nincs jogosultság.' }, { status: 403 }), requestId);
   }
 
   let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: 'Érvénytelen JSON.' }, { status: 400 });
+    serverLogger.warn('news_create_invalid_json', { scope: 'api.news.post', requestId, actorId: user.id });
+    return withRequestId(NextResponse.json({ error: 'Érvénytelen JSON.' }, { status: 400 }), requestId);
   }
 
   const parsed = createNewsSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Validációs hiba', details: parsed.error.flatten() }, { status: 400 });
+    serverLogger.warn('news_create_validation_failed', { scope: 'api.news.post', requestId, actorId: user.id });
+    return withRequestId(
+      NextResponse.json({ error: 'Validációs hiba', details: parsed.error.flatten() }, { status: 400 }),
+      requestId,
+    );
   }
 
   const data = parsed.data;
-  const item = await createNewsItem(data);
+  const created = await createNewsItem(data);
+  if (!created.ok) {
+    serverLogger.warn('news_create_duplicate_ingest', {
+      scope: 'api.news.post',
+      requestId,
+      actorId: user.id,
+      existingNewsId: created.existingNewsId,
+    });
+    return withRequestId(
+      NextResponse.json(
+        {
+          error: 'Ez a külső tartalom már szerepel a rendszerben.',
+          code: 'duplicate_ingest',
+          existingNewsId: created.existingNewsId,
+        },
+        { status: 409 },
+      ),
+      requestId,
+    );
+  }
+
+  const item = created.item;
   await writeAudit({
     actor: user,
     action: 'create_news',
@@ -45,5 +75,13 @@ export async function POST(request: Request) {
     details: `${item.status}:${item.category}`,
   });
 
-  return NextResponse.json({ item }, { status: 201 });
+  serverLogger.info('news_create_success', {
+    scope: 'api.news.post',
+    requestId,
+    actorId: user.id,
+    newsId: item.id,
+    status: item.status,
+    source: item.source,
+  });
+  return withRequestId(NextResponse.json({ item }, { status: 201 }), requestId);
 }

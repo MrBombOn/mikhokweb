@@ -1,0 +1,42 @@
+# Fázis 17: ütemezett / manuális éles (vagy staging) **publikus** HTTP smoke — seed / login nélkül.
+# Beállítás: repository secret `PRODUCTION_SMOKE_BASE_URL`; ütemezéshez opcionális variable `PRODUCTION_SMOKE_ENABLED=true`.
+# Részletek: docs/synthetic-monitoring.md
+
+name: Production public smoke
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '15 * * * *'
+
+jobs:
+  production_public_smoke:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || vars.PRODUCTION_SMOKE_ENABLED == 'true'
+    env:
+      PRODUCTION_SMOKE_BASE_URL: ${{ secrets.PRODUCTION_SMOKE_BASE_URL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Require PRODUCTION_SMOKE_BASE_URL
+        run: |
+          if [ -z "${PRODUCTION_SMOKE_BASE_URL:-}" ]; then
+            echo "::error::Set repository secret PRODUCTION_SMOKE_BASE_URL (see docs/synthetic-monitoring.md)"
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium
+
+      - name: Run production public smoke
+        run: npx playwright test --config=playwright.production.config.ts

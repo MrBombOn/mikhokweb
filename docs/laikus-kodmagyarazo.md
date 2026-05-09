@@ -55,3 +55,5 @@ Ez azért fontos, mert a felhasználó nem “fagyást” lát, hanem érthető 
 - `docs/rbac.md` – szerepkörök és jogosultság
 - `docs/testing.md` – hogyan ellenőrizzük, hogy jól működik
 - `docs/final-frontend-backend-audit.md` – végső állapotlista
+- **Modulonként (mit hol találsz a kódban):** [`docs/modules/README.md`](./modules/README.md) — pl. rólunk, naptár, esemény domain, kalkulátor, hírek, iroda, galéria, útmutatók, keresés, adatvédelem, állapot oldal
+- **Biztonság (middleware, bejelentkezés, CSRF):** [`docs/security-walkthrough.md`](./security-walkthrough.md)

@@ -1,0 +1,20 @@
+/**
+ * @file Login / kétoszlopos modál rács — korábban `base.css` (Fázis 2 partial).
+ */
+.modal-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+@media (max-width: 900px) {
+  .modal-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 980px) {
+  .modal-grid {
+    grid-template-columns: 1fr !important;
+  }
+}

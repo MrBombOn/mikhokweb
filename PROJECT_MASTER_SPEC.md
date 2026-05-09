@@ -639,6 +639,8 @@ A mobilélmény ne desktopról összenyomott kompromisszum legyen, hanem önáll
 
 ## 23. Javasolt teljes mappaszerkezet
 
+A **jelenlegi** elrendezés és a „ne legyen üres duplikátum `app/about` + `app/(public)/about`” szabály rögzítve: `docs/folder-structure.md`.
+
 ```txt
 pte-mik-hok-web/
 ├─ app/
@@ -710,7 +712,6 @@ pte-mik-hok-web/
 │  └─ utils/
 ├─ prisma/
 ├─ design-pack/
-├─ content/
 ├─ public/
 │  └─ brand/
 ├─ styles/

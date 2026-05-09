@@ -21,6 +21,12 @@ export type NewsItem = {
   author: string;
   cover: CoverTone;
   hasCover: boolean;
+  /** URL-barát egyedi útvonal; üres lehet régi rekordoknál. */
+  slug?: string;
+  /** Kanonikus publikus URL (`NEXT_PUBLIC_SITE_URL` + `/news/{slug}`). */
+  canonicalUrl?: string;
+  coverAltHu?: string;
+  coverAltEn?: string;
   scheduledFor?: string;
   archived?: boolean;
   externalUrl?: string;

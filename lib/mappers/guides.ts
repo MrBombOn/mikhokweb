@@ -15,6 +15,10 @@ export function guideToDto(row: Guide): GuideDto {
     keywords: row.keywords,
     documentUrl: row.documentUrl ?? undefined,
     documentType: row.documentType ?? undefined,
+    attachmentName: row.attachmentName ?? undefined,
+    attachmentMime: row.attachmentMime ?? undefined,
+    attachmentSizeBytes: row.attachmentSizeBytes ?? undefined,
+    searchableText: row.searchableText,
     listDate: row.listDate,
     status: row.status as GuideItemStatus,
   };

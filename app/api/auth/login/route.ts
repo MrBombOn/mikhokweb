@@ -17,54 +17,85 @@ import { loginFormSchema } from '@/lib/validation/auth';
 import { verifyPassword } from '@/lib/auth/password';
 import { signSessionToken, SESSION_COOKIE, sessionCookieBase } from '@/lib/auth/session';
 import { badRequest, tooManyRequests, unauthorized } from '@/lib/api/response';
-import { clearFailures, getClientKey, isBlocked, registerFailure } from '@/lib/security/login-rate-limit';
+import {
+  blockedRemainingSeconds,
+  clearFailures,
+  getClientKey,
+  getIpOnlyLoginKey,
+  getNetworkKey,
+  isBlocked,
+  registerFailure,
+} from '@/lib/security/login-rate-limit';
 import { enforceSameOrigin } from '@/lib/security/csrf';
 import { serverLogger } from '@/lib/observability/server-logger';
+import { getRequestId, withRequestId } from '@/lib/observability/request-context';
 
 const LEGACY_GATE = 'hok_admin_gate';
 
 export async function POST(request: Request) {
+  const requestId = getRequestId(request);
   const csrf = enforceSameOrigin(request);
-  if (csrf) return csrf;
+  if (csrf) return withRequestId(csrf, requestId);
 
   const json = await request.json().catch(() => null);
   const parsed = loginFormSchema.safeParse(json);
   if (!parsed.success) {
-    serverLogger.warn('auth_login_invalid_body', { scope: 'api.auth.login' });
-    return badRequest('invalid_body', parsed.error.flatten());
+    serverLogger.warn('auth_login_invalid_body', { scope: 'api.auth.login', requestId });
+    return withRequestId(badRequest('invalid_body', parsed.error.flatten()), requestId);
   }
   const { username, password } = parsed.data;
-  const key = getClientKey(request, username);
-  if (isBlocked(key)) {
+  const userKey = getClientKey(request, username);
+  const networkKey = getNetworkKey(request);
+  const ipKey = getIpOnlyLoginKey(request);
+  if (isBlocked(userKey) || isBlocked(networkKey) || isBlocked(ipKey)) {
+    const retryAfterSec = Math.max(
+      blockedRemainingSeconds(userKey),
+      blockedRemainingSeconds(networkKey),
+      blockedRemainingSeconds(ipKey),
+    );
     serverLogger.warn('auth_login_rate_limited', {
       scope: 'api.auth.login',
       username,
+      requestId,
     });
-    return tooManyRequests('Túl sok sikertelen belépés. Várj 15 percet.');
+    return withRequestId(
+      tooManyRequests(
+      'Túl sok sikertelen belépés. Várj 15 percet.',
+      retryAfterSec > 0 ? retryAfterSec : 60,
+      ),
+      requestId,
+    );
   }
 
   const user = await prisma.user.findUnique({ where: { username: username.trim() } });
   if (!user) {
-    registerFailure(key);
+    registerFailure(userKey);
+    registerFailure(networkKey);
     serverLogger.warn('auth_login_invalid_credentials', {
       scope: 'api.auth.login',
       username,
       reason: 'missing_user',
+      requestId,
     });
-    return unauthorized('invalid_credentials');
+    return withRequestId(unauthorized('invalid_credentials'), requestId);
   }
   const ok = await verifyPassword(password, user.passwordHash);
   if (!ok) {
-    registerFailure(key);
+    registerFailure(userKey);
+    registerFailure(networkKey);
+    registerFailure(ipKey);
     serverLogger.warn('auth_login_invalid_credentials', {
       scope: 'api.auth.login',
       username,
       reason: 'wrong_password',
+      requestId,
     });
-    return unauthorized('invalid_credentials');
+    return withRequestId(unauthorized('invalid_credentials'), requestId);
   }
 
-  clearFailures(key);
+  clearFailures(userKey);
+  clearFailures(networkKey);
+  clearFailures(ipKey);
   const token = await signSessionToken(user.id, user.role);
   const res = NextResponse.json({
     user: { id: user.id, username: user.username, role: user.role },
@@ -76,6 +107,7 @@ export async function POST(request: Request) {
     userId: user.id,
     username: user.username,
     role: user.role,
+    requestId,
   });
-  return res;
+  return withRequestId(res, requestId);
 }

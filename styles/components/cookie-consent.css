@@ -1,0 +1,48 @@
+/* Fázis 12: cookie / tájékoztató sáv */
+.cookie-consent-bar {
+  position: fixed;
+  z-index: 1200;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: var(--space-3, 12px);
+  background: color-mix(in srgb, var(--surface-elevated, #1e293b) 96%, transparent);
+  border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.cookie-consent-bar-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3, 12px);
+}
+
+.cookie-consent-bar-text {
+  flex: 1 1 240px;
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.cookie-consent-bar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2, 8px);
+  align-items: center;
+}
+
+.btn-sm {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+.legal-doc-stack section h2 {
+  font-size: 1.1rem;
+  margin: 0 0 0.5rem;
+}
+
+.legal-doc-stack section + section {
+  margin-top: 1.5rem;
+}

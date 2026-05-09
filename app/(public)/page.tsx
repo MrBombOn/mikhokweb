@@ -1,13 +1,15 @@
 import type { Metadata } from 'next';
+import { PublicRouteJsonLd } from '@/components/seo/PublicRouteJsonLd';
 import { HomePageClient } from './HomePageClient';
-import { buildPageMetadata } from '@/lib/seo';
+import { buildPageMetadataFromMessages } from '@/lib/seo';
 
-export const metadata: Metadata = buildPageMetadata({
-  title: 'Főoldal',
-  description: 'PTE MIK HÖK főoldal: kiemelt hírek, közlemények és gyors átjárás a hallgatói modulokhoz.',
-  path: '/',
-});
+export const metadata: Metadata = buildPageMetadataFromMessages('home', '/');
 
 export default function HomePage() {
-  return <HomePageClient />;
+  return (
+    <>
+      <PublicRouteJsonLd routeKey="home" path="/" layout="webpage" />
+      <HomePageClient />
+    </>
+  );
 }

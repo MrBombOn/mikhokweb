@@ -1,30 +1,47 @@
 /**
  * @file REST: felhasználók admin – lista (GET), létrehozás (POST).
  */
-import { z } from 'zod';
+import type { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/db';
 import { getCurrentUser, isAdmin } from '@/lib/auth/current-user';
 import { hashPassword } from '@/lib/auth/password';
 import { badRequest, conflict, created, forbidden, ok } from '@/lib/api/response';
+import { buildPageInfo } from '@/lib/api/page-info';
 import { enforceSameOrigin } from '@/lib/security/csrf';
 import { writeAudit } from '@/lib/audit/write-audit';
+import { createUserSchema } from '@/lib/validation/users';
 
-const createUserSchema = z.object({
-  username: z.string().min(3).max(80),
-  password: z.string().min(8).max(200),
-  role: z.enum(['OFFICE', 'ADMIN']).default('OFFICE'),
-});
-
-export async function GET() {
+export async function GET(request: Request) {
   const user = await getCurrentUser();
   if (!user || !isAdmin(user.role)) {
     return forbidden();
   }
 
-  const rows = await prisma.user.findMany({
-    orderBy: [{ createdAt: 'desc' }],
-    select: { id: true, username: true, role: true, createdAt: true, updatedAt: true },
-  });
+  const url = new URL(request.url);
+  const q = url.searchParams.get('q')?.trim();
+  const roleFilter = url.searchParams.get('role')?.trim();
+  const sort = url.searchParams.get('sort') === 'asc' ? 'asc' : 'desc';
+  const rawLimit = Math.min(200, Math.max(5, Number(url.searchParams.get('limit') ?? '25')));
+  const rawPage = Math.max(1, Number(url.searchParams.get('page') ?? '1'));
+  const limit = Number.isFinite(rawLimit) ? rawLimit : 25;
+  const page = Number.isFinite(rawPage) ? rawPage : 1;
+  const skip = (page - 1) * limit;
+
+  const where: Prisma.UserWhereInput = {
+    ...(q ? { username: { contains: q } } : {}),
+    ...(roleFilter === 'OFFICE' || roleFilter === 'ADMIN' ? { role: roleFilter } : {}),
+  };
+
+  const [rows, total] = await Promise.all([
+    prisma.user.findMany({
+      where,
+      orderBy: [{ createdAt: sort }, { id: sort }],
+      skip,
+      take: limit,
+      select: { id: true, username: true, role: true, createdAt: true, updatedAt: true },
+    }),
+    prisma.user.count({ where }),
+  ]);
 
   return ok({
     items: rows.map((r) => ({
@@ -34,6 +51,9 @@ export async function GET() {
       createdAt: r.createdAt.toISOString(),
       updatedAt: r.updatedAt.toISOString(),
     })),
+    pageInfo: {
+      ...buildPageInfo({ page, limit, total, sort }),
+    },
   });
 }
 

@@ -2,6 +2,7 @@ import type { Prisma, UserRole } from '@prisma/client';
 import { prisma } from '@/lib/db';
 import { canManageNews } from '@/lib/auth/current-user';
 import { calendarEventToItem } from '@/lib/mappers/calendar';
+import { removeSearchDocument, syncSearchDocumentForEventId } from '@/lib/search/sync-documents';
 import type { CreateEventInput, PatchEventInput } from '@/lib/validation/events';
 
 export function parseEventId(raw: string): number | null {
@@ -22,21 +23,52 @@ export async function listEventsForRole(role?: UserRole) {
 }
 
 export async function createCalendarEvent(data: CreateEventInput) {
-  const row = await prisma.calendarEvent.create({
-    data: {
-      titleHu: data.titleHu,
-      titleEn: data.titleEn,
-      eventDate: data.eventDate,
-      time: data.time,
-      location: data.location,
-      category: data.category,
-      dayLabel: data.dayLabel,
-      note: data.note,
-      status: data.status,
-    },
+  const repeat = Math.max(0, data.repeatWeeklyCount ?? 0);
+  const dates: string[] = [data.eventDate];
+
+  if (repeat > 0) {
+    const base = new Date(`${data.eventDate}T00:00:00`);
+    if (!Number.isNaN(base.valueOf())) {
+      for (let i = 1; i <= repeat; i += 1) {
+        const d = new Date(base);
+        d.setDate(base.getDate() + i * 7);
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        dates.push(`${y}-${m}-${day}`);
+      }
+    }
+  }
+
+  const out = await prisma.$transaction(async (tx) => {
+    const rows = [];
+    for (const eventDate of dates) {
+      const row = await tx.calendarEvent.create({
+        data: {
+          titleHu: data.titleHu,
+          titleEn: data.titleEn,
+          eventDate,
+          time: data.time,
+          location: data.location,
+          category: data.category,
+          dayLabel: data.dayLabel,
+          note: data.note,
+          status: data.status,
+        },
+      });
+      rows.push(row);
+    }
+    return rows;
   });
 
-  return calendarEventToItem(row);
+  for (const row of out) {
+    await syncSearchDocumentForEventId(row.id);
+  }
+
+  return {
+    primary: calendarEventToItem(out[0]),
+    items: out.map(calendarEventToItem),
+  };
 }
 
 export async function getCalendarEventDto(id: number, role?: UserRole) {
@@ -79,6 +111,8 @@ export async function patchCalendarEvent(id: number, patch: PatchEventInput) {
     data: updateData,
   });
 
+  await syncSearchDocumentForEventId(id);
+
   return { ok: true as const, item: calendarEventToItem(row) };
 }
 
@@ -92,6 +126,8 @@ export async function softDeleteCalendarEvent(id: number) {
     where: { id },
     data: { status: 'deleted' },
   });
+
+  await removeSearchDocument('events', id);
 
   return { ok: true as const };
 }

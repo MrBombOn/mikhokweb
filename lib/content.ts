@@ -20,12 +20,54 @@ export { dictionary, t, type Messages } from '@/lib/i18n';
  * A `LandingHero` / kapcsolódó komponensek iterálnak rajta.
  */
 export const landingCards = [
-  { href: '/news', color: 'linear-gradient(135deg,#1a6fd4,#4a9fff)', titleHu: 'Hírek', titleEn: 'News', textHu: 'Hírlista, archívum és keresés.', textEn: 'News list, archive and search.' },
-  { href: '/calendar', color: 'linear-gradient(135deg,#2858ff,#567dff)', titleHu: 'Naptár', titleEn: 'Calendar', textHu: 'Programok, idővonal, foglalás.', textEn: 'Programs, timeline and booking.' },
-  { href: '/calculator', color: 'linear-gradient(135deg,#0f8f78,#28ba95)', titleHu: 'KKI kalkulátor', titleEn: 'KKI Calculator', textHu: 'KI, KKI, súlyozott átlag.', textEn: 'KI, KKI and weighted average.' },
-  { href: '/gallery', color: 'linear-gradient(135deg,#7c49ff,#a06cff)', titleHu: 'Galéria', titleEn: 'Gallery', textHu: 'Mappák, nézetek, feltöltés.', textEn: 'Folders, views and upload.' },
-  { href: '/guides', color: 'linear-gradient(135deg,#da7d14,#f2a93c)', titleHu: 'Útmutatók', titleEn: 'Guides', textHu: 'Dokumentumok és segédanyagok.', textEn: 'Documents and support materials.' },
-  { href: '/about', color: 'linear-gradient(135deg,#d24b5f,#f07590)', titleHu: 'About Us', titleEn: 'About Us', textHu: 'A HÖK felépítése és tagjai.', textEn: 'Structure and members of the union.' },
+  {
+    href: '/calendar',
+    cardTone: 'calendar',
+    titleHu: 'Naptár',
+    titleEn: 'Calendar',
+    textHu: 'Események, időrend és tornatermi foglalás.',
+    textEn: 'Events, timeline and gym booking.',
+  },
+  {
+    href: '/calculator',
+    cardTone: 'calculator',
+    titleHu: 'Kalkulátor',
+    titleEn: 'Calculator',
+    textHu: 'Kreditindex, súlyozott kreditindex és összesített átlag számítása.',
+    textEn: 'Credit index, weighted credit index and overall average.',
+  },
+  {
+    href: '/gallery',
+    cardTone: 'gallery',
+    titleHu: 'Galéria',
+    titleEn: 'Gallery',
+    textHu: 'Képek, albumok és idővonal nézet.',
+    textEn: 'Images, albums and timeline view.',
+  },
+  {
+    href: '/guides',
+    cardTone: 'guides',
+    titleHu: 'Útmutatók',
+    titleEn: 'Guides',
+    textHu: 'Dokumentumok és segédanyagok.',
+    textEn: 'Documents and support materials.',
+  },
+  {
+    href: '/about',
+    cardTone: 'about',
+    titleHu: 'Rólunk',
+    titleEn: 'About Us',
+    textHu: 'A HÖK felépítése és tagjai.',
+    textEn: 'Structure and members of the union.',
+  },
+  {
+    href: '/office',
+    cardTone: 'office',
+    titleHu: 'Iroda',
+    titleEn: 'Office',
+    textHu: 'Nyitvatartás, ügyintézési állapot és elérhetőség.',
+    textEn: 'Opening hours, service status and contact options.',
+  },
 ] as const;
 
 /** Demo hírsor – `LandingNews` és hír modul prototípusok. */
@@ -55,9 +97,9 @@ export const initialSemesters: Semester[] = [
     name: '2025/26 ősz',
     ghost: false,
     subjects: [
-      { id: 11, name: 'Matematika 1', credits: 5, grade: 4, completed: true },
-      { id: 12, name: 'Programozás 1', credits: 6, grade: 5, completed: true },
-      { id: 13, name: 'Fizika', credits: 4, grade: 3, completed: false },
+      { id: 11, name: 'Matematika 1', credits: 5, grade: 4, ghost: false },
+      { id: 12, name: 'Programozás 1', credits: 6, grade: 5, ghost: false },
+      { id: 13, name: 'Fizika', credits: 4, grade: 3, ghost: false },
     ],
   },
   {
@@ -65,8 +107,8 @@ export const initialSemesters: Semester[] = [
     name: '2025/26 tavasz',
     ghost: false,
     subjects: [
-      { id: 21, name: 'Matematika 2', credits: 5, grade: 4, completed: true },
-      { id: 22, name: 'Webfejlesztés', credits: 5, grade: 5, completed: true },
+      { id: 21, name: 'Matematika 2', credits: 5, grade: 4, ghost: false },
+      { id: 22, name: 'Webfejlesztés', credits: 5, grade: 5, ghost: false },
     ],
   },
 ];
@@ -100,6 +142,6 @@ export const aboutPeople = [
 
 /** Office modul nyitvatartási szöveg – nyelv szerinti kulcs. */
 export const officeInfo = {
-  hu: 'Az iroda hétfőtől csütörtökig 10:00–15:00 között biztosan nyitva tart, pénteken pedig előzetes egyeztetéssel érhető el.',
-  en: 'The office is reliably open Monday to Thursday between 10:00 and 15:00, while Friday visits require prior arrangement.',
+  hu: 'Hétfőtől csütörtökig 10:00–15:00 között személyesen is elérhető az iroda; pénteki ügyintézéshez előzetes egyeztetés szükséges.',
+  en: 'The office is open in person Monday to Thursday, 10:00–15:00; Friday visits are by appointment.',
 } as const;

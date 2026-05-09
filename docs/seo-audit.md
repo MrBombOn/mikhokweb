@@ -7,6 +7,7 @@
 - `sitemap.xml` publikus oldalakra fókuszálva (`app/sitemap.ts`), admin route-ok nélkül.
 - `robots.txt` beállítva (`app/robots.ts`): admin és API tiltás crawlernek.
 - Strukturált adat példa: híroldal `CollectionPage` JSON-LD (`/news`).
+- **Fázis 18:** globális `@graph` (Organization + WebSite + SearchAction), oldalankénti JSON-LD (`lib/seo/jsonld.tsx`, `PublicRouteJsonLd`), hreflang `x-default` + `hu-HU`, `/search?q=` mélylink — részletek: [`seo-hreflang-jsonld-phase18.md`](./seo-hreflang-jsonld-phase18.md).
 
 ## Nyelvi alternatíva stratégia
 

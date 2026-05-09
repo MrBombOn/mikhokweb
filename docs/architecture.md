@@ -2,6 +2,10 @@
 
 A rendszer Next.js App Router, feature-first modulok és központi SSOT elvek szerinti felépítését a `PROJECT_MASTER_SPEC.md` és a jelen fájl későbbi bővítése rögzíti.
 
+**Repository mappa– és felelősségi fa (kanonikus, karbantartott):** [`docs/folder-structure.md`](./folder-structure.md) — `app/(public)` vs `app/(internal)`, `components` vs `features` vs `lib`, CSS partialok.
+
+**Globális UI shell** (gyökér `layout`, `AppProvider`, navbar/footer, toast/modál, `data-expandable`): [`docs/global-shell.md`](./global-shell.md).
+
 ## Fázis 1 – rögzített alap (bootstrap)
 
 | Réteg | Hely | Szerep |
@@ -10,7 +14,7 @@ A rendszer Next.js App Router, feature-first modulok és központi SSOT elvek sz
 | DB kliens | `lib/db.ts` | Egy példányos `PrismaClient` (Next hot-reload biztonság). |
 | UI szöveg SSOT | `lib/i18n/messages.ts`, `lib/i18n/index.ts` | HU/EN üzenetek; a `lib/content.ts` továbbra is re-exportálja a `t()` / `dictionary`-t a kompatibilitás miatt. |
 | Validáció | `lib/validation/auth.ts` (Zod) | Bejelentkezési űrlap séma; bővíthető modulonként. |
-| Vizuális tokenek | `styles/design-tokens.css` | `:root` és `html[data-theme='dark']` CSS változók; `app/globals.css` elején `@import`. |
+| Vizuális tokenek | `styles/design-tokens.css` | `:root` és `html[data-theme='dark']` CSS változók; betöltés: `app/globals.css` → `@import` (Fázis 2). |
 
 ## Fázis 2 – belső admin zóna váz
 
@@ -99,9 +103,28 @@ A rendszer Next.js App Router, feature-first modulok és központi SSOT elvek sz
 | Réteg | Hely | Szerep |
 |--------|------|--------|
 | Adat | `Category`, `AuditLog` | Kategória SSOT (scope + HU/EN név + státusz), írási műveletek naplózása |
-| API | `/api/users`, `/api/categories`, `/api/audit` | ADMIN lista/létrehozás felhasználókhoz és kategóriákhoz; audit stream |
+| API | `/api/users`, `/api/users/import`, `/api/categories`, `/api/categories/import`, `/api/audit`, `/api/audit/export`, `/api/admin/saved-views` | Admin lista + lapozás/szűrés; tömeges import; audit CSV export; mentett tábla nézetek |
 | Kliens | `/admin`, `/admin/users`, `/admin/categories`, `/admin/content`, `/admin/audit` | Élő API alapú admin dashboard, alap gyorsműveletek és listák |
 | Seed | `prisma/seed.ts` | alap kategóriák + baseline audit sor |
+
+## Fázis 9 – Builder Studio V2
+
+| Réteg | Hely | Szerep |
+|--------|------|--------|
+| Adat | `SiteBuilderPage`, `SiteBuilderPageRevision`, `SiteBuilderPublishQueue`, `SiteDesignConfig` | Dinamikus oldalak, revízió snapshotok, publish queue, design guardrails |
+| API | `/api/admin/site-builder/pages`, `/api/admin/site-builder/pages/[id]`, `/api/admin/site-builder/pages/[id]/revisions`, `/api/admin/site-builder/publish-queue`, `/api/admin/site-builder/templates`, `/api/admin/site-builder/design` | CRUD + diff/rollback + publish queue + template feed |
+| Admin UI | `app/(internal)/admin/site-builder/page.tsx` | Drag-drop blokk szerkesztő, HU/EN inline editor, draft diff, rollback, queue |
+| Publikus render | `app/(public)/custom/[slug]/page.tsx` | Blokk-alapú oldal render, draft preview admin query-vel |
+
+## P10 (átadó Fázis 10) – Engineering / ops automatizálás
+
+| Réteg | Hely | Szerep |
+|--------|------|--------|
+| E2E | `e2e/smoke-roles.spec.ts`, `playwright.config.ts`, `npm run test:e2e` | Szerepkör szerinti smoke (guest / OFFICE / ADMIN), CI-ben Chromium |
+| Dependency risk | `scripts/ops/dependency-risk-dashboard.cjs`, `GET /api/admin/dependency-risk`, `/admin/dependency-risk` | `npm audit` + `npm outdated` JSON összegzés (`.ops/dependency-risk-report.json`) |
+| Canary flags | `lib/feature-flags/registry.ts` (`siteBuilderV2Canary`, rollout %), `GET /api/admin/site-builder/canary`, `PATCH /api/admin/feature-flags` | Hash-bucket alapú fokozatos kirollázás + admin UI rollout mező |
+| Changelog | `scripts/ops/generate-changelog.cjs` → `docs/auto-changelog.md` | Progress-log + `git log` alapú automata jegyzet (release checklist) |
+| Audit export riasztás | `lib/audit/export-alerts.ts`, `scripts/ops/audit-export-alerts.cjs` | Gyakori export / nagy export staff notification + batch riport |
 
 ## Fázis 12 – API validáció és hardening (első kör)
 
@@ -110,7 +133,7 @@ A rendszer Next.js App Router, feature-first modulok és központi SSOT elvek sz
 | API response | `lib/api/response.ts` | Egységes siker/hiba JSON válasz-factory |
 | Biztonság | `lib/security/login-rate-limit.ts` | Login brute-force lassítás memória-alapú fail bucket-tel |
 | Route hardening | `app/api/auth/login/route.ts` | Validációs részletek visszaadása + rate limit + egységes 4xx válaszok |
-| Admin API | `app/api/users/route.ts`, `app/api/categories/route.ts`, `app/api/audit/route.ts` | Egységes hibakezelés response factory-vel |
+| Admin API | `app/api/users/*`, `app/api/categories/*`, `app/api/audit/*`, `app/api/admin/saved-views/*`, `app/api/admin/notifications/*` | Response factory + RBAC; P7: `pageInfo`, import, export, `AdminSavedView`; P8: `StaffNotification`, `staff-dispatch`, onboarding + palette + diff UI |
 
 ## Fázis 13 – Biztonsági audit (első kör)
 
@@ -125,7 +148,7 @@ A rendszer Next.js App Router, feature-first modulok és központi SSOT elvek sz
 | Réteg | Hely | Szerep |
 |--------|------|--------|
 | Layout | `app/layout.tsx` | Skip link a fő tartalomhoz (`#main-content`) |
-| Stílus | `app/globals.css` | Globális `:focus-visible` és `prefers-reduced-motion` fallback |
+| Stílus | `app/globals.css` → `styles/design-tokens.css` + `styles/modules/*.css` + `styles/base.css` + `styles/components/*` (köztük `landing-news-extras`, `modal-grid`, `admin-login-form`, `admin-modal-scroll-lock`, `effects-v11-plus`) | Lásd [`docs/global-shell.md`](./global-shell.md) import sorrend; `:focus-visible` és `prefers-reduced-motion` a `base` / partialokban |
 | Admin UI | `app/(internal)/admin/users/page.tsx`, `app/(internal)/admin/categories/page.tsx` | Űrlapmezők ARIA címkézése, `role="alert"` hibaszöveg |
 | Dokumentáció | `docs/a11y-audit.md` | Audit jegyzetek és nyitott teendők |
 
@@ -169,7 +192,7 @@ A rendszer Next.js App Router, feature-first modulok és központi SSOT elvek sz
 | Közös SEO helper | `lib/seo.ts` | Kanonikus URL, Open Graph alap, HU/EN alternates |
 | Route metadata | `app/(public)/**/page.tsx` | Fő publikus oldalak dedikált title/description beállítása |
 | Sitemap/robots | `app/sitemap.ts`, `app/robots.ts` | Publikus indexelés finomhangolása, admin/API tiltás |
-| Strukturált adat | `app/(public)/news/page.tsx` | `CollectionPage` JSON-LD a hírekhez |
+| Strukturált adat | `lib/seo/jsonld.tsx`, `components/seo/PublicRouteJsonLd.tsx`, `app/layout.tsx`, publikus `page.tsx` fájlok | Globális `@graph` (Organization, WebSite, SearchAction) + oldalanként `CollectionPage` / `WebPage` / hír `NewsArticle` (Fázis 18) |
 | Audit jegyzet | `docs/seo-audit.md` | SEO állapot + nyelvi alternatíva stratégia |
 
 ## Fázis 20 – Hallgatói élmény: keresés + visszajelzés (első kör)

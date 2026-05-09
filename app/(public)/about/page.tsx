@@ -1,13 +1,15 @@
 import type { Metadata } from 'next';
+import { PublicRouteJsonLd } from '@/components/seo/PublicRouteJsonLd';
 import { AboutPageClient } from './AboutPageClient';
-import { buildPageMetadata } from '@/lib/seo';
+import { buildPageMetadataFromMessages } from '@/lib/seo';
 
-export const metadata: Metadata = buildPageMetadata({
-  title: 'About Us',
-  description: 'A PTE MIK HÖK bemutatkozása, szervezeti blokkok és elérhető tisztségviselők.',
-  path: '/about',
-});
+export const metadata: Metadata = buildPageMetadataFromMessages('about', '/about');
 
 export default function AboutPage() {
-  return <AboutPageClient />;
+  return (
+    <>
+      <PublicRouteJsonLd routeKey="about" path="/about" layout="webpage" />
+      <AboutPageClient />
+    </>
+  );
 }

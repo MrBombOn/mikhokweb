@@ -1,35 +1,34 @@
 /**
  * @file Route szintű hiba boundary (`error.tsx`)
- *
- * @description
- * Ha egy **kliens- vagy szerverkomponens** kivételt dob a fa alatt, a Next.js
- * ezt a komponenst jeleníti meg. **Kötelező** `'use client'`, mert a `reset()`
- * gomb eseménykezelőt használ.
- *
- * @props
- * - `error`: a dobott `Error` példány (üzenet megjelenítésre); `digest` opcionálisan
- *   szerverhibák összerendelésére (Next belső).
- * - `reset`: újrapróbálkozás – újrarendereli a sikertelen szegmens fát.
  */
 'use client';
 
 import Link from 'next/link';
 import { PublicPageShell } from '@/components/layout/PublicPageShell';
+import { useApp } from '@/components/layout/AppProvider';
+import { AlertTriangleIcon, HomeIcon, RefreshCwIcon } from '@/components/ui/Icons';
+import { t } from '@/lib/content';
 
 export default function Error({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  const { lang } = useApp();
+  const s = t(lang).systemShell;
+
   return (
     <PublicPageShell>
       <section className="section state-shell">
         <div className="card state-card">
-          <p className="state-eyebrow">Rendszerhiba</p>
-          <h2 className="state-title">Valami hiba történt</h2>
-          <p className="state-text">{error.message || 'A művelet jelenleg nem érhető el.'}</p>
+          <p className="state-eyebrow">{s.routeErrorEyebrow}</p>
+          <AlertTriangleIcon className="state-icon" />
+          <h2 className="state-title">{s.routeErrorTitle}</h2>
+          <p className="state-text">{error.message || s.routeErrorMessageFallback}</p>
           <div className="state-actions">
             <button type="button" className="btn btn-primary" onClick={() => reset()}>
-              Újra
+              <RefreshCwIcon className="icon--sm" />
+              {s.retryShort}
             </button>
             <Link href="/" className="btn btn-secondary">
-              Főoldal
+              <HomeIcon className="icon--sm" />
+              {s.homeShort}
             </Link>
           </div>
         </div>

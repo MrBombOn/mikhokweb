@@ -1,0 +1,39 @@
+/**
+ * @file Bejelentkezési modál belső mezői (`AdminLoginModal`) — Fázis 2 partial.
+ * A portál / ablak / fejléc: `effects-v11-plus.css`.
+ */
+.admin-login-head {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+.admin-login-shield {
+  pointer-events: none;
+}
+.admin-login-lead {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.7;
+}
+.admin-login-mode-hint {
+  margin: 8px 0 0;
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+  font-weight: 600;
+}
+.admin-login-grid {
+  margin-top: var(--space-4);
+}
+.admin-login-field {
+  display: block;
+}
+.admin-login-field-label {
+  margin-bottom: var(--space-2);
+  font-weight: 700;
+}
+.admin-login-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 14px;
+}

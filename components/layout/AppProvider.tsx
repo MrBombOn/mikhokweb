@@ -16,16 +16,33 @@
  * - `admin` kulcs: UI-hoz kapcsolódó cache jelleg (a valódi auth a session süti).
  *
  * @megjegyzés
- * `isAdmin` név történelmi: valójában „van bejelentkezett felhasználó” (OFFICE/ADMIN szerepkör a JWT-ben).
+ * `isAdmin` név történelmi: valójában „van bejelentkezett staff” (OFFICE vagy ADMIN) — kijelentkezés, session jelző.
+ * `isAdminRole` csak `User.role === ADMIN` — egyes publikus szerkesztői UI-k továbbra is csak ADMIN-nak (pl. belső `/admin/users`, `/admin/audit`). A **hírek** főoldali modulja OFFICE + ADMIN jogot használ (`LandingNews`: `sessionUser.role`). Belső `/admin` + middleware OFFICE-nak is (kategóriák, tartalom), kivéve users/audit.
  */
 'use client';
 
-import { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import type { Lang, Theme, ToastItem } from '@/types';
+import type { AppRole } from '@/lib/auth/session';
+import { t } from '@/lib/content';
+import { APP_LANG_STORAGE_KEY } from '@/lib/i18n/lang-storage';
 import { loginFormSchema } from '@/lib/validation/auth';
 
 /** Belépési űrlap mezői – lokális state, nem ugyanaz mint a Zod infer (egyszerűsített). */
 type LoginForm = { username: string; password: string };
+
+/** `GET /api/auth/session` user mezője – RBAC a kliensen (UI); a döntés mindig API + middleware. */
+export type SessionUser = { id: string; username: string; role: AppRole };
+
+/** Designos megerősítő modál (`ModalHost`) – helyettesíti a `window.confirm`-ot. */
+export type ConfirmDialogOptions = {
+  message: string;
+  title?: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  /** Piros elsődleges gomb (törlés / veszélyes művelet). */
+  destructive?: boolean;
+};
 
 /**
  * Context érték típusa – minden mezőt a `useMemo` value objektum tölt ki.
@@ -39,6 +56,11 @@ type AppContextValue = {
   setTheme: (theme: Theme) => void;
   toggleTheme: () => void;
   isAdmin: boolean;
+  /** Van bejelentkezett staff session (OFFICE vagy ADMIN). */
+  isStaff: boolean;
+  /** `ADMIN` szerepkör – publikus oldalakon szerkesztői / „admin” UI; felhasználók / audit; `/admin/users`, `/admin/audit`. */
+  isAdminRole: boolean;
+  sessionUser: SessionUser | null;
   setIsAdmin: (value: boolean) => void;
   setGuestMode: () => void;
   toast: (text: string, type?: ToastItem['type']) => void;
@@ -47,6 +69,10 @@ type AppContextValue = {
   modal: { title: string; content: string } | null;
   openModal: (title: string, content: string) => void;
   closeModal: () => void;
+  /** Nyitott megerősítő párbeszéd (csak megjelenítéshez; `requestConfirm` használata javasolt). */
+  confirmDialog: ConfirmDialogOptions | null;
+  requestConfirm: (opts: ConfirmDialogOptions) => Promise<boolean>;
+  resolveConfirm: (ok: boolean) => void;
   showAdminLogin: boolean;
   openAdminLogin: () => void;
   closeAdminLogin: () => void;
@@ -61,18 +87,21 @@ type AppContextValue = {
 const AppContext = createContext<AppContextValue | null>(null);
 
 /** localStorage kulcsok – verzió prefix elkerüli a régi stringek ütközését. */
-const STORAGE = { lang: 'v26-lang', theme: 'v26-theme', admin: 'v26-admin' };
+const STORAGE = { lang: APP_LANG_STORAGE_KEY, theme: 'v26-theme', admin: 'v26-admin' };
 
-/** Jövőben: `matchMedia('(prefers-color-scheme: dark)')` olvasása; most fix light alap. */
-const getSystemTheme = (): Theme => 'light';
+/** Jövőben: `matchMedia('(prefers-color-scheme: …)')` olvasása; alapértelmezés: sötét téma. */
+const getSystemTheme = (): Theme => 'dark';
 
 /** Provider – a gyökér layout közvetlen gyermekeinek kell lennie. */
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [lang, setLang] = useState<Lang>('hu');
-  const [theme, setTheme] = useState<Theme>('light');
+  const [theme, setTheme] = useState<Theme>('dark');
   const [isAdmin, setIsAdmin] = useState(false);
+  const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [modal, setModal] = useState<{ title: string; content: string } | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<ConfirmDialogOptions | null>(null);
+  const confirmResolverRef = useRef<((ok: boolean) => void) | null>(null);
   const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [loginForm, setLoginForm] = useState<LoginForm>({ username: '', password: '' });
   const [adminLoginPending, setAdminLoginPending] = useState(false);
@@ -85,11 +114,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (savedLang === 'hu' || savedLang === 'en') setLang(savedLang);
     setTheme(savedTheme === 'light' || savedTheme === 'dark' ? savedTheme : getSystemTheme());
     void fetch('/api/auth/session', { credentials: 'include' })
-      .then((r) => r.json() as Promise<{ user?: { id: string } | null }>)
+      .then((r) => r.json() as Promise<{ user?: SessionUser | null }>)
       .then((data) => {
-        setIsAdmin(!!data?.user);
+        const u = data?.user ?? null;
+        setSessionUser(u);
+        setIsAdmin(!!u);
       })
       .catch(() => {
+        setSessionUser(null);
         setIsAdmin(false);
       });
   }, []);
@@ -99,6 +131,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     document.documentElement.dataset.theme = theme;
     window.localStorage.setItem(STORAGE.theme, theme);
   }, [theme]);
+
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
 
   useEffect(() => {
     window.localStorage.setItem(STORAGE.lang, lang);
@@ -126,9 +162,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   /** Session törlése szerveren, majd lokális admin flag false. */
   const setGuestMode = useCallback(() => {
     void fetch('/api/auth/session', { method: 'DELETE', credentials: 'include' }).finally(() => {
+      setSessionUser(null);
       setIsAdmin(false);
       setShowAdminLogin(false);
-      toast(lang === 'hu' ? 'Guest mód aktív.' : 'Guest mode active.', 'info');
+      toast(t(lang).common.guestModeActive, 'info');
     });
   }, [lang, toast]);
 
@@ -143,6 +180,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   function closeModal() {
     setModal(null);
   }
+
+  const requestConfirm = useCallback((opts: ConfirmDialogOptions) => {
+    return new Promise<boolean>((resolve) => {
+      confirmResolverRef.current = resolve;
+      setConfirmDialog(opts);
+    });
+  }, []);
+
+  const resolveConfirm = useCallback((ok: boolean) => {
+    const r = confirmResolverRef.current;
+    confirmResolverRef.current = null;
+    setConfirmDialog(null);
+    r?.(ok);
+  }, []);
 
   function openAdminLogin() {
     setAdminLoginError(null);
@@ -161,8 +212,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setAdminLoginError(null);
       const parsed = loginFormSchema.safeParse(loginForm);
       if (!parsed.success) {
-        setAdminLoginError(lang === 'hu' ? 'Add meg a felhasználónevet és a jelszót.' : 'Please provide username and password.');
-        toast(lang === 'hu' ? 'Add meg a felhasználónevet és a jelszót.' : 'Please provide username and password.', 'warning');
+        const fillMsg = t(lang).common.loginEnterCredentials;
+        setAdminLoginError(fillMsg);
+        toast(fillMsg, 'warning');
         return;
       }
       setAdminLoginPending(true);
@@ -175,11 +227,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         });
         const payload = (await res.json().catch(() => ({}))) as { error?: string };
         if (!res.ok) {
-          let message = lang === 'hu' ? 'Belépés sikertelen.' : 'Login failed.';
+          const c = t(lang).common;
+          let message: string = c.loginFailed;
           if (payload.error === 'invalid_credentials') {
-            message = lang === 'hu' ? 'Hibás felhasználónév vagy jelszó.' : 'Invalid username or password.';
+            message = c.loginInvalidCredentials;
           } else if (payload.error === 'invalid_body') {
-            message = lang === 'hu' ? 'Hiányzó vagy hibás login adatok.' : 'Missing or invalid login payload.';
+            message = c.loginInvalidBody;
           } else if (payload.error?.includes('Túl sok')) {
             message = payload.error;
           }
@@ -187,13 +240,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           toast(message, 'warning');
           return;
         }
-        setIsAdmin(true);
+        const sessionRes = await fetch('/api/auth/session', { credentials: 'include' });
+        const sessionData = (await sessionRes.json().catch(() => ({}))) as { user?: SessionUser | null };
+        const u = sessionData.user ?? null;
+        setSessionUser(u);
+        setIsAdmin(!!u);
         setShowAdminLogin(false);
         setLoginForm({ username: '', password: '' });
         setAdminLoginError(null);
-        toast(lang === 'hu' ? 'Admin mód aktiválva.' : 'Admin mode enabled.', 'success');
+        toast(t(lang).common.staffSignInSuccess, 'success');
       } catch {
-        const message = lang === 'hu' ? 'Hálózati hiba, próbáld újra.' : 'Network error, please retry.';
+        const message = t(lang).common.networkErrorRetry;
         setAdminLoginError(message);
         toast(message, 'warning');
       } finally {
@@ -201,6 +258,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
     })();
   }, [adminLoginPending, loginForm, lang, toast]);
+
+  const isStaff = !!sessionUser;
+  const isAdminRole = sessionUser?.role === 'ADMIN';
 
   const value = useMemo(
     () => ({
@@ -211,6 +271,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setTheme,
       toggleTheme,
       isAdmin,
+      isStaff,
+      isAdminRole,
+      sessionUser,
       setIsAdmin,
       setGuestMode,
       toast,
@@ -219,6 +282,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       modal,
       openModal,
       closeModal,
+      confirmDialog,
+      requestConfirm,
+      resolveConfirm,
       showAdminLogin,
       openAdminLogin,
       closeAdminLogin,
@@ -229,7 +295,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       adminLoginError,
       clearAdminLoginError: () => setAdminLoginError(null),
     }),
-    [lang, theme, isAdmin, toasts, modal, showAdminLogin, loginForm, submitAdminLogin, adminLoginPending, adminLoginError, setGuestMode, toast],
+    [
+      lang,
+      theme,
+      isAdmin,
+      isStaff,
+      isAdminRole,
+      sessionUser,
+      toasts,
+      modal,
+      confirmDialog,
+      requestConfirm,
+      resolveConfirm,
+      showAdminLogin,
+      loginForm,
+      submitAdminLogin,
+      adminLoginPending,
+      adminLoginError,
+      setGuestMode,
+      toast,
+    ],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

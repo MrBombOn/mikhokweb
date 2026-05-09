@@ -2,15 +2,23 @@
  * @file Belső irodai munkafelület – `/admin/office`
  *
  * @description
- * A master spec `(internal)/office` és `(public)/office` egyaránt `/office` lenne route group
- * nélkül – ezért a belső felület ide került. A nyilvános iroda: `/office`.
+ * A nyilvános iroda: `/office`. Szövegek: `messages.internal`.
  */
+'use client';
+
+import { useApp } from '@/components/layout/AppProvider';
 import { Card, SectionHeader } from '@/components/ui/Core';
+import { t } from '@/lib/content';
+
 export default function InternalOfficePage() {
+  const { lang } = useApp();
+  const m = t(lang).internal;
   return (
     <div className="app-shell section">
-      <SectionHeader eyebrow="Office (belső)" title="Irodai munkafelület" text="Office szerepkörű szerkesztés és ütemezés." />
-      <Card><p style={{ color: 'var(--muted)' }}>A nyilvános tájékoztató továbbra is a `/office` oldalon érhető el.</p></Card>
+      <SectionHeader eyebrow={m.officeEyebrow} title={m.officeTitle} text={m.officeLead} />
+      <Card>
+        <p className="muted-text">{m.officePublicHint}</p>
+      </Card>
     </div>
   );
 }

@@ -17,6 +17,16 @@ export function MotionReveal({ children, className = '' }: { children: ReactNode
     }
     const el = ref.current;
     if (!el) return;
+
+    /** Ha már a nézetben van (pl. modul oldal teteje), ne várjunk IO-ra — különben egy ideig üresnek tűnik a tartalom. */
+    const marginBottom = window.innerHeight * 0.08;
+    const rect = el.getBoundingClientRect();
+    const inViewSync = rect.top < window.innerHeight - marginBottom && rect.bottom > 0;
+    if (inViewSync) {
+      setVisible(true);
+      return;
+    }
+
     const io = new IntersectionObserver(
       (entries) => {
         for (const e of entries) {

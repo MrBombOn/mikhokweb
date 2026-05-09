@@ -1,14 +1,11 @@
 /**
  * @file Bejelentkezési modál – felhasználónév / jelszó + guest gyorsgomb
- *
- * @description
- * Az `AdminModal` primitívet használja (lásd `components/ui/AdminModal.tsx`).
- * A tényleges POST hívás az `AppProvider.submitAdminLogin`-ben történik (`/api/auth/login`).
  */
 'use client';
 
 import type { FormEvent } from 'react';
 import { useApp } from '@/components/layout/AppProvider';
+import { t } from '@/lib/content';
 import { ShieldIcon } from '@/components/ui/Icons';
 import { AdminModal } from '@/components/ui/AdminModal';
 
@@ -26,6 +23,9 @@ export function AdminLoginModal() {
     clearAdminLoginError,
   } = useApp();
 
+  const dict = t(lang);
+  const c = dict.common;
+
   function onSubmit(e: FormEvent) {
     e.preventDefault();
     submitAdminLogin();
@@ -34,9 +34,10 @@ export function AdminLoginModal() {
   return (
     <AdminModal
       open={showAdminLogin}
-      title={lang === 'hu' ? 'Bejelentkezés' : 'Sign in'}
-      closeLabel={lang === 'hu' ? 'Bezárás' : 'Close'}
+      title={c.navSignIn}
+      closeLabel={c.modalClose}
       onClose={closeAdminLogin}
+      noWindowScroll
     >
       <form className="stack" onSubmit={onSubmit}>
         <div className="admin-login-head">
@@ -44,19 +45,16 @@ export function AdminLoginModal() {
             <ShieldIcon />
           </span>
           <div>
-            <p className="admin-login-lead">
-              {lang === 'hu'
-                ? 'Felhasználónév és jelszó a seedelt adatbázis felhasználójával. Guest mód: session törlése.'
-                : 'Username and password match a seeded database user. Guest mode clears the session.'}
-            </p>
+            <p className="admin-login-lead">{c.loginModalLead}</p>
+            <p className="admin-login-mode-hint">{c.loginModalModesHint}</p>
           </div>
         </div>
         <div className="modal-grid admin-login-grid">
           <label className="admin-login-field">
-            <div className="admin-login-field-label">{lang === 'hu' ? 'Felhasználónév' : 'Username'}</div>
+            <div className="admin-login-field-label">{c.loginUsernameLabel}</div>
             <input
               className="input"
-              placeholder={lang === 'hu' ? 'Felhasználónév' : 'Username'}
+              placeholder={c.loginUsernamePlaceholder}
               value={loginForm.username}
               autoComplete="username"
               autoFocus
@@ -68,11 +66,11 @@ export function AdminLoginModal() {
             />
           </label>
           <label className="admin-login-field">
-            <div className="admin-login-field-label">{lang === 'hu' ? 'Jelszó' : 'Password'}</div>
+            <div className="admin-login-field-label">{c.loginPasswordLabel}</div>
             <input
               className="input"
               type="password"
-              placeholder={lang === 'hu' ? 'Jelszó' : 'Password'}
+              placeholder={c.loginPasswordPlaceholder}
               value={loginForm.password}
               autoComplete="current-password"
               onChange={(e) => {
@@ -86,10 +84,10 @@ export function AdminLoginModal() {
         {adminLoginError ? <p className="admin-login-error">{adminLoginError}</p> : null}
         <div className="news-form-actions">
           <button className="btn btn-secondary" type="button" onClick={setGuestMode} disabled={adminLoginPending}>
-            {lang === 'hu' ? 'Guest mód' : 'Guest mode'}
+            {c.loginGuestMode}
           </button>
           <button className="btn btn-primary" type="submit" disabled={adminLoginPending}>
-            {adminLoginPending ? (lang === 'hu' ? 'Belépés...' : 'Signing in...') : lang === 'hu' ? 'Belépés' : 'Sign in'}
+            {adminLoginPending ? c.loginSubmitting : c.navSignIn}
           </button>
         </div>
       </form>

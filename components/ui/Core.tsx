@@ -20,14 +20,16 @@ export function Card({
   children,
   strong = false,
   className,
+  dataExpandable = false,
 }: {
   children: ReactNode;
   strong?: boolean;
   className?: string;
+  dataExpandable?: boolean;
 }) {
   const classes = ['card', 'card-pad', strong ? 'card-strong' : '', className].filter(Boolean).join(' ');
   return (
-    <div className={classes}>
+    <div className={classes} data-expandable={dataExpandable ? 'true' : undefined} role={dataExpandable ? 'button' : undefined} tabIndex={dataExpandable ? 0 : undefined} aria-expanded={dataExpandable ? 'false' : undefined}>
       {children}
     </div>
   );

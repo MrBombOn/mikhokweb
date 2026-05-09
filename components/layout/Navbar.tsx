@@ -2,16 +2,18 @@
  * @file Felső navigációs sáv + landing „lebegő” vezérlők
  *
  * @description
- * Két fő mód:
- * 1. **Landing első szakasz**: csak `QuickControls` (nyelv, téma, login) – a teljes navbar
- *    a hírek blokk közelében gördül be (`showFullLandingNav` scroll alapú).
- * 2. **Egyéb oldalak / landing későbbi szakasz**: teljes `topbar` logóval, desktop és mobil menüvel.
+ * **CSS SSOT:** `styles/components/navbar.css` (+ `styles/components/effects-v11-plus.css` link díszítés). Topbar tokenek: `styles/design-tokens.css`, `lib/layout/topbar-layout.ts`.
+ * Fő módok:
+ * 1. **Landing a hírek előtt**: csak a három gyorsgomb (`QuickControls`), **fix** jobb felső, `app-shell` igazítással — görgetéskor sem mozdul el.
+ * 2. **Landing a híreknél**: `#landing-news` a viewportban (vagy mély görgetés / `#news` hash) → teljes **topbar** (`topbar-landing-reveal`), ugyanott a 3 gomb mint a teljes sávban.
+ * 3. **Egyéb oldalak**: teljes `topbar` logóval, desktop és mobil menüvel.
  *
  * **D5 (mobil):** nyitott panelnél `role="dialog"` + fókusz-csapda, Escape bezárás, fókusz vissza a
  * hamburgerre, `body`/`html` scroll lock (lásd `docs/decision-log.md` D-2026-04-28-008).
  *
  * @nav_linkek
- * `baseLinks` + opcionális `{ href: '/admin', key: 'admin' }` ha `isAdmin` (session alapú).
+ * `baseLinks` + `{ href: '/admin', key: 'admin' }` minden **bejelentkezett szerkesztőnek** (`isStaff`);
+ * a `/admin/users` és `/admin/audit` útvonalakat a middleware továbbra is csak **ADMIN**-nak engedi.
  *
  * @i18n
  * Feliratok: `t(lang).nav[...]` a `lib/i18n/messages.ts`-ből.
@@ -23,19 +25,31 @@ import { usePathname } from 'next/navigation';
 import { forwardRef, useCallback, useEffect, useRef, useState } from 'react';
 import { useApp } from '@/components/layout/AppProvider';
 import { BrandMark } from '@/components/brand/BrandMark';
-import { MoonIcon, SunIcon, GlobeIcon, ShieldIcon } from '@/components/ui/Icons';
+import { MoonIcon, SunIcon, GlobeIcon, ShieldIcon, SettingsIcon, CalendarIcon, CalculatorIcon, GalleryIcon, BookOpenIcon, UsersIcon } from '@/components/ui/Icons';
+import { collectFocusables } from '@/lib/a11y/focusables';
 import { t } from '@/lib/content';
 
 const MOBILE_NAV_PANEL_ID = 'hok-primary-mobile-nav';
 
+function navIconFor(href: string) {
+  if (href === '/calendar') return <CalendarIcon className="icon--sm" />;
+  if (href === '/calculator') return <CalculatorIcon className="icon--sm" />;
+  if (href === '/gallery') return <GalleryIcon className="icon--sm" />;
+  if (href === '/guides') return <BookOpenIcon className="icon--sm" />;
+  if (href === '/about') return <UsersIcon className="icon--sm" />;
+  if (href === '/office') return <ShieldIcon className="icon--sm" />;
+  if (href === '/admin') return <SettingsIcon className="icon--sm" />;
+  return null;
+}
+
 /** Publikus modulok + admin link csak bejelentkezve kerül a listába (lásd `links` alább). */
 const baseLinks = [
-  { href: '/news', key: 'news' as const },
   { href: '/calendar', key: 'calendar' as const },
   { href: '/calculator', key: 'calculator' as const },
   { href: '/gallery', key: 'gallery' as const },
   { href: '/guides', key: 'guides' as const },
   { href: '/about', key: 'about' as const },
+  { href: '/office', key: 'office' as const },
 ];
 
 /** Jobb felső gyors gombok – landing és desktop nav újrahasználja. */
@@ -46,6 +60,10 @@ function QuickControls({
   onLang,
   onTheme,
   onAuth,
+  langToggleAria,
+  themeToggleAria,
+  signInLabel,
+  signOutLabel,
   className = '',
 }: {
   lang: 'hu' | 'en';
@@ -54,6 +72,10 @@ function QuickControls({
   onLang: () => void;
   onTheme: () => void;
   onAuth: () => void;
+  langToggleAria: string;
+  themeToggleAria: string;
+  signInLabel: string;
+  signOutLabel: string;
   className?: string;
 }) {
   return (
@@ -61,7 +83,7 @@ function QuickControls({
       <button
         className="btn btn-secondary icon-btn nav-icon-btn nav-lang-btn"
         onClick={onLang}
-        aria-label={lang === 'hu' ? 'Switch to English' : 'Váltás magyarra'}
+        aria-label={langToggleAria}
       >
         <GlobeIcon />
         <span className="lang-code">{lang === 'hu' ? 'HU' : 'EN'}</span>
@@ -69,13 +91,13 @@ function QuickControls({
       <button
         className="btn btn-secondary icon-btn nav-icon-btn"
         onClick={onTheme}
-        aria-label={lang === 'hu' ? 'Témaváltás' : 'Toggle theme'}
+        aria-label={themeToggleAria}
       >
         {theme === 'light' ? <MoonIcon /> : <SunIcon />}
       </button>
       <button className="btn btn-primary nav-login-btn" onClick={onAuth}>
         <ShieldIcon />
-        <span>{isAdmin ? (lang === 'hu' ? 'Guest mód' : 'Guest mode') : lang === 'hu' ? 'Bejelentkezés' : 'Login'}</span>
+        <span>{isAdmin ? signOutLabel : signInLabel}</span>
       </button>
     </div>
   );
@@ -84,10 +106,9 @@ function QuickControls({
 /** Hamburger – mobil panel; `aria-expanded`, `aria-controls`, fókusz visszaállítás a szülő `ref`-fel (D5). */
 const MobileMenuButton = forwardRef<
   HTMLButtonElement,
-  { open: boolean; onClick: () => void; lang: 'hu' | 'en' }
->(function MobileMenuButton({ open, onClick, lang }, ref) {
-  const label =
-    lang === 'hu' ? (open ? 'Mobil menü bezárása' : 'Mobil menü megnyitása') : open ? 'Close mobile menu' : 'Open mobile menu';
+  { open: boolean; onClick: () => void; openLabel: string; closedLabel: string }
+>(function MobileMenuButton({ open, onClick, openLabel, closedLabel }, ref) {
+  const label = open ? openLabel : closedLabel;
   return (
     <button
       ref={ref}
@@ -106,22 +127,14 @@ const MobileMenuButton = forwardRef<
 });
 MobileMenuButton.displayName = 'MobileMenuButton';
 
-function collectFocusables(panel: HTMLElement): HTMLElement[] {
-  const sel =
-    'a[href]:not([tabindex="-1"]), button:not([disabled]):not([tabindex="-1"]), input:not([disabled]):not([tabindex="-1"]), select:not([disabled]):not([tabindex="-1"]), textarea:not([disabled]):not([tabindex="-1"])';
-  return Array.from(panel.querySelectorAll<HTMLElement>(sel)).filter((el) => {
-    if (el.getAttribute('aria-hidden') === 'true') return false;
-    const style = window.getComputedStyle(el);
-    if (style.visibility === 'hidden' || style.display === 'none') return false;
-    return true;
-  });
-}
-
 export function Navbar() {
   const pathname = usePathname();
-  const { lang, toggleLang, theme, toggleTheme, isAdmin, setGuestMode, openAdminLogin } = useApp();
+  const { lang, toggleLang, theme, toggleTheme, isAdmin, isStaff, setGuestMode, openAdminLogin } = useApp();
   const dict = t(lang);
-  const links = isAdmin ? [...baseLinks, { href: '/admin', key: 'admin' as const }] : baseLinks;
+  const c = dict.common;
+  const n = dict.nav;
+  const links = isStaff ? [...baseLinks, { href: '/admin', key: 'admin' as const }] : baseLinks;
+  const langToggleAria = lang === 'hu' ? c.langSwitchToEn : c.langSwitchToHu;
   const isLanding = pathname === '/';
   const [showFullLandingNav, setShowFullLandingNav] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -135,42 +148,52 @@ export function Navbar() {
     setMobileOpen(false);
   }, [pathname]);
 
-  // Landing: a `#landing-news` DOM pozíciója alatt döntünk a teljes navbar megjelenéséről
+  // Landing: teljes navbar, ha a hírek blokk a DOM-ban van és metszi a nézetet, vagy mély görgetés / hash (összhang: `LAYOUT_TOPBAR_SCROLL_CLEARANCE_PX`, landing scroll reveal)
   useEffect(() => {
     if (!isLanding) return;
-    const ENTER_THRESHOLD = 132;
-    const EXIT_THRESHOLD = 180;
-    const onScroll = () => {
-      const news = document.getElementById('landing-news');
-      if (!news) {
-        setShowFullLandingNav((prev) =>
-          window.scrollY > Math.max(420, window.innerHeight * 0.5) ? true : prev && window.scrollY > Math.max(360, window.innerHeight * 0.42),
-        );
+    const SCROLL_ENTER = 138;
+    const NEWS_EXIT_BOTTOM = -120;
+    const SCROLL_EXIT = 56;
+    const evaluate = () => {
+      const hash = window.location.hash.toLowerCase();
+      if (hash === '#landing-news' || hash === '#news') {
+        setShowFullLandingNav(true);
         return;
       }
-      const top = news.getBoundingClientRect().top;
+      const news = document.getElementById('landing-news');
+      if (news) {
+        const r = news.getBoundingClientRect();
+        const intersects = r.top < window.innerHeight && r.bottom > 72;
+        setShowFullLandingNav((prev) => {
+          if (!prev && (window.scrollY >= SCROLL_ENTER || intersects)) return true;
+          if (prev && r.bottom < NEWS_EXIT_BOTTOM && window.scrollY < SCROLL_EXIT) return false;
+          return prev;
+        });
+        return;
+      }
       setShowFullLandingNav((prev) => {
-        if (!prev && top <= ENTER_THRESHOLD) return true;
-        if (prev && top > EXIT_THRESHOLD) return false;
+        if (!prev && window.scrollY >= SCROLL_ENTER) return true;
+        if (prev && window.scrollY < SCROLL_EXIT) return false;
         return prev;
       });
     };
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll);
+    evaluate();
+    window.addEventListener('scroll', evaluate, { passive: true });
+    window.addEventListener('resize', evaluate);
+    window.addEventListener('hashchange', evaluate);
     return () => {
-      window.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', onScroll);
+      window.removeEventListener('scroll', evaluate);
+      window.removeEventListener('resize', evaluate);
+      window.removeEventListener('hashchange', evaluate);
     };
   }, [isLanding]);
 
   useEffect(() => {
-    if (isLanding && !showFullLandingNav) return;
     const onScroll = () => setTopbarScrolled(window.scrollY > 10);
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
-  }, [isLanding, showFullLandingNav]);
+  }, []);
 
   /** D5: fókusz-csapda, Escape, scroll lock, visszafókusz a hamburgerre */
   useEffect(() => {
@@ -240,48 +263,61 @@ export function Navbar() {
   }, [mobileOpen, closeMobile, links.length]);
 
   const authAction = isAdmin ? setGuestMode : openAdminLogin;
+  const dialogLabel = n.siteNavigationAria;
 
-  if (isLanding && !showFullLandingNav) {
-    return (
-      <div className="floating-landing-controls">
-        <div className="app-shell floating-landing-inner">
-          <QuickControls
-            lang={lang}
-            theme={theme}
-            isAdmin={isAdmin}
-            onLang={toggleLang}
-            onTheme={toggleTheme}
-            onAuth={authAction}
-            className="landing-quick-controls"
+  const fullTopbar = (
+    <header
+      className={`topbar topbar-solid${topbarScrolled ? ' topbar-scrolled' : ''}${isLanding && showFullLandingNav ? ' topbar-landing-reveal' : ''}`}
+    >
+      <div className="app-shell navbar-full">
+        <div className={`navbar-mobile-head${isLanding && showFullLandingNav ? ' navbar-mobile-head--landing-reveal' : ''}`}>
+          <Link href="/" className="brand brand-compact" aria-label={n.brandHomeAria}>
+            <BrandMark variant="nav" />
+          </Link>
+          {isLanding && showFullLandingNav ? (
+            <QuickControls
+              lang={lang}
+              theme={theme}
+              isAdmin={isAdmin}
+              onLang={toggleLang}
+              onTheme={toggleTheme}
+              onAuth={authAction}
+              langToggleAria={langToggleAria}
+              themeToggleAria={c.themeToggleAria}
+              signInLabel={c.navSignIn}
+              signOutLabel={c.navSignOut}
+              className="landing-reveal-head-quick"
+            />
+          ) : null}
+          <MobileMenuButton
+            ref={menuButtonRef}
+            open={mobileOpen}
+            openLabel={n.mobileMenuClose}
+            closedLabel={n.mobileMenuOpen}
+            onClick={() => setMobileOpen((prev) => !prev)}
           />
         </div>
-      </div>
-    );
-  }
-
-  const dialogLabel = lang === 'hu' ? 'Oldal navigáció' : 'Site navigation';
-
-  return (
-    <header className={`topbar topbar-solid${topbarScrolled ? ' topbar-scrolled' : ''}`}>
-      <div className="app-shell navbar navbar-full">
-        <div className="navbar-mobile-head">
-          <Link href="/" className="brand brand-compact" aria-label="PTE MIK HÖK landing">
-            <BrandMark variant="nav" />
-            <div className="brand-copy">
-              <strong>PTE MIK HÖK</strong>
-              <div className="brand-sub">{isAdmin ? (lang === 'hu' ? 'Admin mód' : 'Admin mode') : lang === 'hu' ? 'Guest mód' : 'Guest mode'}</div>
-            </div>
-          </Link>
-          <MobileMenuButton ref={menuButtonRef} open={mobileOpen} lang={lang} onClick={() => setMobileOpen((prev) => !prev)} />
-        </div>
-        <nav className="nav-links nav-links-desktop" aria-label="Desktop navigation">
+        <nav className="nav-links nav-links-desktop" aria-label={n.desktopNavAria}>
           {links.map((link) => (
             <Link prefetch={false} key={link.href} href={link.href} className={`nav-link ${pathname === link.href ? 'active' : ''}`}>
+              {navIconFor(link.href)}
               {dict.nav[link.key]}
             </Link>
           ))}
         </nav>
-        <QuickControls lang={lang} theme={theme} isAdmin={isAdmin} onLang={toggleLang} onTheme={toggleTheme} onAuth={authAction} className="quick-controls-desktop" />
+        <QuickControls
+          lang={lang}
+          theme={theme}
+          isAdmin={isAdmin}
+          onLang={toggleLang}
+          onTheme={toggleTheme}
+          onAuth={authAction}
+          langToggleAria={langToggleAria}
+          themeToggleAria={c.themeToggleAria}
+          signInLabel={c.navSignIn}
+          signOutLabel={c.navSignOut}
+          className="quick-controls-desktop"
+        />
       </div>
       <div
         ref={mobilePanelRef}
@@ -292,7 +328,7 @@ export function Navbar() {
         aria-label={mobileOpen ? dialogLabel : undefined}
         aria-hidden={!mobileOpen}
       >
-        <nav className="mobile-nav-links" aria-label={lang === 'hu' ? 'Linkek' : 'Links'}>
+        <nav className="mobile-nav-links" aria-label={n.mobileNavAria}>
           {links.map((link) => (
             <Link
               prefetch={false}
@@ -301,12 +337,51 @@ export function Navbar() {
               className={`nav-link mobile-nav-link ${pathname === link.href ? 'active' : ''}`}
               onClick={() => setMobileOpen(false)}
             >
+              {navIconFor(link.href)}
               {dict.nav[link.key]}
             </Link>
           ))}
         </nav>
-        <QuickControls lang={lang} theme={theme} isAdmin={isAdmin} onLang={toggleLang} onTheme={toggleTheme} onAuth={authAction} className="mobile-quick-controls" />
+        {!isLanding ? (
+          <QuickControls
+            lang={lang}
+            theme={theme}
+            isAdmin={isAdmin}
+            onLang={toggleLang}
+            onTheme={toggleTheme}
+            onAuth={authAction}
+            langToggleAria={langToggleAria}
+            themeToggleAria={c.themeToggleAria}
+            signInLabel={c.navSignIn}
+            signOutLabel={c.navSignOut}
+            className="mobile-quick-controls"
+          />
+        ) : null}
       </div>
     </header>
   );
+
+  if (isLanding && !showFullLandingNav) {
+    return (
+      <nav className="landing-fixed-quick-wrap" aria-label={n.landingQuickControlsAria}>
+        <div className="app-shell landing-fixed-quick-row">
+          <QuickControls
+            lang={lang}
+            theme={theme}
+            isAdmin={isAdmin}
+            onLang={toggleLang}
+            onTheme={toggleTheme}
+            onAuth={authAction}
+            langToggleAria={langToggleAria}
+            themeToggleAria={c.themeToggleAria}
+            signInLabel={c.navSignIn}
+            signOutLabel={c.navSignOut}
+            className="quick-controls-desktop"
+          />
+        </div>
+      </nav>
+    );
+  }
+
+  return fullTopbar;
 }

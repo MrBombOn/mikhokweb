@@ -3,10 +3,13 @@
  *
  * @description
  * D2: a téma `html[data-theme='dark']` alapján két export vált (nincs „villanás”, SSR-barát).
- * Hivatalos cserelogók: másold felül a fájlokat a `design-pack/` → `public/brand/` lépés szerint (`docs/design-pack.md`).
+ * Világos mód: jel (`logo-hok-mark-color.svg`) a `logopack/POTTY NELKUL/szines_natur.svg`, szójel (`logo-hok-wordmark-light-bg.svg`) a `logopack/LOGO TELJES/minimal_teljes.svg` – nincs fehér keret. További cserék: `docs/design-pack.md`.
  * SVG-k: `next/image` + `unoptimized` (lásd `docs/design-pack.md` §4).
+ * Nav jel px: `lib/layout/topbar-layout.ts` ↔ `--layout-nav-brand-mark-size` (`styles/design-tokens.css`).
  */
 import Image from 'next/image';
+
+import { LAYOUT_NAV_BRAND_MARK_PX } from '@/lib/layout/topbar-layout';
 
 export type BrandMarkVariant = 'nav' | 'hero' | 'footer' | 'internal';
 
@@ -19,7 +22,14 @@ const dims: Record<
   BrandMarkVariant,
   { light: string; dark: string; swapClass: string; width: number; height: number; decorative: boolean }
 > = {
-  nav: { light: MARK_LIGHT, dark: MARK_DARK, swapClass: 'brand-mark-swap--nav', width: 36, height: 36, decorative: true },
+  nav: {
+    light: MARK_LIGHT,
+    dark: MARK_DARK,
+    swapClass: 'brand-mark-swap--nav',
+    width: LAYOUT_NAV_BRAND_MARK_PX,
+    height: LAYOUT_NAV_BRAND_MARK_PX,
+    decorative: true,
+  },
   internal: {
     light: MARK_LIGHT,
     dark: MARK_DARK,

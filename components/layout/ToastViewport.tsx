@@ -1,16 +1,15 @@
 /**
  * @file Toast értesítések megjelenítése
- *
- * @description
- * Az `AppProvider` `toasts` tömbjét mapeli. Minden elem **gomb**, hogy kattintással
- * is eltávolítható legyen (`removeToast`), illetve időzítő is törli (`toast()` implementáció).
  */
 'use client';
 
 import { useApp } from '@/components/layout/AppProvider';
+import { t } from '@/lib/content';
 
 export function ToastViewport() {
-  const { toasts, removeToast } = useApp();
+  const { toasts, removeToast, lang } = useApp();
+  const dismissAria = t(lang).common.toastDismissAria;
+
   return (
     <div className="toast-stack" aria-live="polite" aria-atomic="true">
       {toasts.map((item) => (
@@ -19,7 +18,7 @@ export function ToastViewport() {
           className={`toast toast--${item.type} animate-rise`}
           onClick={() => removeToast(item.id)}
           type="button"
-          aria-label={`Close ${item.type} notification`}
+          aria-label={dismissAria}
         >
           <strong className="toast-label">{item.type.toUpperCase()}</strong>
           <span>{item.text}</span>

@@ -1,0 +1,24 @@
+/**
+ * @file Modál nyitáskor scroll lock + keskeny nézet safe-area — Fázis 2 partial.
+ * Betöltés: `globals.css` az `effects-v11-plus.css` **után**, hogy a `!important` safe-area felülírások megmaradjanak.
+ */
+body.admin-modal-open,
+html.admin-modal-open {
+  overflow: hidden;
+}
+
+@media (max-width: 640px) {
+  .admin-modal-window {
+    width: min(100%, 96vw) !important;
+    padding: 16px !important;
+    max-height: min(
+      90dvh,
+      calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 24px)
+    ) !important;
+  }
+
+  .admin-modal-portal {
+    padding: max(12px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px))
+      max(12px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px)) !important;
+  }
+}

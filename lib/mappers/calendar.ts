@@ -12,6 +12,7 @@ export function calendarEventToItem(row: CalendarEvent): CalendarEventItem {
     category: row.category,
     dayLabel: row.dayLabel ?? '',
     note: row.note ?? undefined,
+    status: row.status as CalendarEventItem['status'],
   };
 }
 

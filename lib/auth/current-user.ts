@@ -4,6 +4,7 @@
 import { cookies } from 'next/headers';
 import type { User, UserRole } from '@prisma/client';
 import { prisma } from '@/lib/db';
+import { isAdminRole } from '@/lib/auth/rbac';
 import { SESSION_COOKIE, verifySessionToken } from '@/lib/auth/session';
 
 export type CurrentUser = Pick<User, 'id' | 'username' | 'role'>;
@@ -25,6 +26,7 @@ export function canManageNews(role: UserRole): boolean {
   return role === 'OFFICE' || role === 'ADMIN';
 }
 
+/** Csak `ADMIN` (felhasználók, audit, egyes rendszer API-k). */
 export function isAdmin(role: UserRole): boolean {
-  return role === 'ADMIN';
+  return isAdminRole(role);
 }

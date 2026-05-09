@@ -9,6 +9,8 @@ export const createBookingSchema = z.object({
   startTime: z.string().regex(/^\d{2}:\d{2}$/),
   endTime: z.string().regex(/^\d{2}:\d{2}$/),
   purpose: z.string().min(1).max(2000),
+  /** Email értesítés nyelve (kliens nyelv); alapértelmezés hu. */
+  locale: z.enum(['hu', 'en']).optional().default('hu'),
 });
 
 export const patchBookingStatusSchema = z.object({

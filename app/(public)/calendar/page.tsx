@@ -1,13 +1,15 @@
 import type { Metadata } from 'next';
+import { PublicRouteJsonLd } from '@/components/seo/PublicRouteJsonLd';
 import { CalendarPageClient } from './CalendarPageClient';
-import { buildPageMetadata } from '@/lib/seo';
+import { buildPageMetadataFromMessages } from '@/lib/seo';
 
-export const metadata: Metadata = buildPageMetadata({
-  title: 'Naptár',
-  description: 'Hallgatói események és tornaterem foglalási információk egy naptárfelületen.',
-  path: '/calendar',
-});
+export const metadata: Metadata = buildPageMetadataFromMessages('calendar', '/calendar');
 
 export default function CalendarPage() {
-  return <CalendarPageClient />;
+  return (
+    <>
+      <PublicRouteJsonLd routeKey="calendar" path="/calendar" layout="collection" />
+      <CalendarPageClient />
+    </>
+  );
 }

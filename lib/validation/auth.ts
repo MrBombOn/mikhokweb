@@ -12,10 +12,22 @@
  */
 import { z } from 'zod';
 
-/** Admin / belépési űrlap mezői – trim és hosszhatár spam ellen. */
+function noDangerousMarkup(fieldLabel: string) {
+  return z.string().superRefine((value, ctx) => {
+    const v = value.toLowerCase();
+    if (v.includes('<script') || v.includes('javascript:') || /on\w+\s*=/.test(v)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `${fieldLabel}: veszelyes tartalom nem engedelyezett`,
+      });
+    }
+  });
+}
+
+/** Admin / belépési űrlap mezői – trim, hosszhatár spam + XSS-ish payload tiltás (P2). */
 export const loginFormSchema = z.object({
-  username: z.string().trim().min(1, 'username_required').max(120),
-  password: z.string().min(1, 'password_required').max(500),
+  username: noDangerousMarkup('username').trim().min(1, 'username_required').max(120),
+  password: noDangerousMarkup('password').min(1, 'password_required').max(500),
 });
 
 /** Inferált típus – űrlap state típusosításához. */

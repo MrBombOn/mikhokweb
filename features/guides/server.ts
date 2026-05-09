@@ -3,6 +3,9 @@ import type { z } from 'zod';
 import { prisma } from '@/lib/db';
 import { canManageNews } from '@/lib/auth/current-user';
 import { guideToDto } from '@/lib/mappers/guides';
+import { buildGuideSearchableText } from '@/lib/guides/searchable-text';
+import { createGuideRevision } from '@/lib/guides/revision';
+import { removeSearchDocument, syncSearchDocumentForGuideId } from '@/lib/search/sync-documents';
 import { parseOptionalHttpUrl, patchGuideSchema, type CreateGuideInput } from '@/lib/validation/guides';
 
 export function parseGuideId(raw: string): number | null {
@@ -28,7 +31,7 @@ export function normalizeCreateGuideDocument(
 ): { ok: true; listDate: string; docUrl: string | null | undefined; docType: string | null | undefined } | { ok: false; error: string } {
   const docUrl = parseOptionalHttpUrl(d.documentUrl ?? undefined);
   if (docUrl === 'invalid') {
-    return { ok: false, error: 'A dokumentum URL csak http(s) lehet vagy üres.' };
+    return { ok: false, error: 'A dokumentum URL csak http(s), relatív (/...) útvonal lehet vagy üres.' };
   }
 
   const listDate = d.listDate ?? new Date().toISOString().slice(0, 10);
@@ -59,10 +62,35 @@ export async function createGuideItem(d: CreateGuideInput) {
       keywords: d.keywords,
       documentUrl: norm.docUrl === undefined ? undefined : norm.docUrl,
       documentType: norm.docType === undefined ? undefined : norm.docType,
+      searchableText: buildGuideSearchableText(d),
       listDate: norm.listDate,
       status: d.status,
     },
   });
+
+  await createGuideRevision(row.id, {
+    reason: 'create',
+    snapshot: {
+      titleHu: row.titleHu,
+      titleEn: row.titleEn,
+      excerptHu: row.excerptHu,
+      excerptEn: row.excerptEn,
+      bodyHu: row.bodyHu,
+      bodyEn: row.bodyEn,
+      category: row.category,
+      topic: row.topic,
+      keywords: row.keywords,
+      documentUrl: row.documentUrl,
+      documentType: row.documentType,
+      attachmentName: row.attachmentName,
+      attachmentMime: row.attachmentMime,
+      attachmentSizeBytes: row.attachmentSizeBytes,
+      listDate: row.listDate,
+      status: row.status,
+    },
+  });
+
+  await syncSearchDocumentForGuideId(row.id);
 
   return { ok: true as const, item: guideToDto(row) };
 }
@@ -106,7 +134,7 @@ export async function patchGuideItem(id: number, patch: PatchGuideInput) {
   if (patch.documentUrl !== undefined) {
     const docUrl = parseOptionalHttpUrl(patch.documentUrl);
     if (docUrl === 'invalid') {
-      return { ok: false as const, status: 400 as const, error: 'A dokumentum URL csak http(s) lehet vagy üres.' };
+      return { ok: false as const, status: 400 as const, error: 'A dokumentum URL csak http(s), relatív (/...) útvonal lehet vagy üres.' };
     }
     updateData.documentUrl = docUrl === undefined ? null : docUrl;
   }
@@ -120,10 +148,48 @@ export async function patchGuideItem(id: number, patch: PatchGuideInput) {
     return { ok: false as const, status: 400 as const, error: 'Nincs frissítendő mező.' };
   }
 
+  const mergedForIndex = {
+    titleHu: patch.titleHu ?? existing.titleHu,
+    titleEn: patch.titleEn ?? existing.titleEn,
+    excerptHu: patch.excerptHu ?? existing.excerptHu,
+    excerptEn: patch.excerptEn ?? existing.excerptEn,
+    bodyHu: patch.bodyHu ?? existing.bodyHu,
+    bodyEn: patch.bodyEn ?? existing.bodyEn,
+    category: patch.category ?? existing.category,
+    topic: patch.topic ?? existing.topic,
+    keywords: patch.keywords ?? existing.keywords,
+  };
+  updateData.searchableText = buildGuideSearchableText(mergedForIndex);
+
   const row = await prisma.guide.update({
     where: { id },
     data: updateData,
   });
+
+  await createGuideRevision(id, {
+    reason: 'patch',
+    patch,
+    snapshot: {
+      titleHu: row.titleHu,
+      titleEn: row.titleEn,
+      excerptHu: row.excerptHu,
+      excerptEn: row.excerptEn,
+      bodyHu: row.bodyHu,
+      bodyEn: row.bodyEn,
+      category: row.category,
+      topic: row.topic,
+      keywords: row.keywords,
+      documentUrl: row.documentUrl,
+      documentType: row.documentType,
+      attachmentName: row.attachmentName,
+      attachmentMime: row.attachmentMime,
+      attachmentSizeBytes: row.attachmentSizeBytes,
+      listDate: row.listDate,
+      status: row.status,
+    },
+  });
+
+  await syncSearchDocumentForGuideId(id);
 
   return { ok: true as const, item: guideToDto(row) };
 }
@@ -138,6 +204,8 @@ export async function softDeleteGuideItem(id: number) {
     where: { id },
     data: { status: 'deleted' },
   });
+
+  await removeSearchDocument('guides', id);
 
   return { ok: true as const };
 }

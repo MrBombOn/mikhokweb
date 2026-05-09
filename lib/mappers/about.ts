@@ -25,6 +25,8 @@ export function aboutMemberToDto(row: AboutMember): AboutMemberDto {
     groupHu: row.groupHu,
     groupEn: row.groupEn,
     imageUrl: row.imageUrl,
+    publishedAt: row.publishedAt ?? null,
+    isAlumni: row.isAlumni,
     sortOrder: row.sortOrder,
     status: row.status as AboutContentStatus,
   };
@@ -35,6 +37,8 @@ export function officeSnapshotToDto(row: OfficeSnapshot): OfficeSnapshotDto {
     id: row.id,
     openingHoursHu: row.openingHoursHu,
     openingHoursEn: row.openingHoursEn,
+    weeklyScheduleHu: row.weeklyScheduleHu,
+    weeklyScheduleEn: row.weeklyScheduleEn,
     presentNowHu: row.presentNowHu,
     presentNowEn: row.presentNowEn,
     serviceStatusHu: row.serviceStatusHu,
@@ -45,6 +49,8 @@ export function officeSnapshotToDto(row: OfficeSnapshot): OfficeSnapshotDto {
     nfcInfoEn: row.nfcInfoEn,
     quickInfoHu: row.quickInfoHu,
     quickInfoEn: row.quickInfoEn,
+    internalNoteHu: row.internalNoteHu,
+    internalNoteEn: row.internalNoteEn,
     status: row.status as AboutContentStatus,
   };
 }

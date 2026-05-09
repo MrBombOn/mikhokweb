@@ -12,7 +12,7 @@ export const createGalleryItemSchema = z.object({
     .max(2000)
     .optional()
     .transform((s) => (s == null || s.trim() === '' ? '' : s.trim()))
-    .refine((s) => s === '' || /^https?:\/\//i.test(s), 'Csak http(s) URL vagy üres.'),
+    .refine((s) => s === '' || /^https?:\/\//i.test(s) || s.startsWith('/'), 'Csak http(s) vagy / kezdetű relatív URL lehet.'),
   status: writableGalleryStatus.default('published'),
   sortOrder: z.number().int().min(0).max(9999).optional().default(0),
 });

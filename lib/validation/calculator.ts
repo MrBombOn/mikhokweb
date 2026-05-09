@@ -5,7 +5,7 @@ const semesterSubjectSchema = z.object({
   name: z.string().min(1).max(200),
   credits: z.number().int().min(0).max(60),
   grade: z.number().min(1).max(5),
-  completed: z.boolean(),
+  ghost: z.boolean().default(false),
 });
 
 const semesterSchema = z.object({
