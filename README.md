@@ -34,6 +34,10 @@ Belépés: seed után pl. **`admin` / `admin-dev-change-me`** vagy **`office` / 
 
 További parancsok: `npm run lint`, `npm run build`, `npm run db:studio` (lásd `package.json`). Az adatbázis séma: `prisma/schema.prisma`.
 
+## GUI launcher (Windows)
+
+Általános, több projekthez is használható indító: `launcher/README.md`. Projektprofil a gyökérben: **`web-launcher.json`** (sablon: **`web-launcher.example.json`**). Build: `launcher\build-launcher.bat` → `launcher\dist\WebProjectLauncher.exe`.
+
 ## Hírek modul (rövid)
 
 - Külön modálok új hírhez, szerkesztéshez, adapterekhez, archívumhoz, kategóriákhoz.

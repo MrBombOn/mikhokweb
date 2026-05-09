@@ -1,73 +1,78 @@
-# Web Project Launcher (.exe)
+# Web Project Launcher (Windows, .NET 9)
 
-Altalanos, Windows-os GUI launcher barmilyen Node/Next webprojekthez.
+Általános **WinForms** indító **bármely npm-alapú** webprojekthez (Next.js, Vite, CRA, stb.): projektmappa, előlépések (telepítés, Prisma, migráció, seed, lint, typecheck, unit teszt, production build, E2E), majd **dev szerver** egy gombbal.
 
 ## Cél
 
-- Ne kelljen `.bat`-ot szerkeszteni vagy külön terminálokat nyitni.
-- Egy helyen legyen:
-  - projektmappa kiválasztás,
-  - indítás/leállítás,
-  - lépések (install/generate/migrate/seed),
-  - élő konzol log,
-  - téma és olvashatóság.
+- Ne kelljen kézzel sorban futtatni a parancsokat új klónozás / gép után.
+- **Másik repóhoz** elég a `web-launcher.json` (lásd lent) + opcionálisan a `web-launcher.example.json` másolata.
+- **Teljes ellenőrzéshez** pipáld be: lint, typecheck, test, build, E2E (a `package.json`-ban létező `scripts` alapján engedélyeződnek).
 
 ## Hol van az exe?
 
-- Build után: `launcher/dist/WebProjectLauncher.exe` (a projekt `AssemblyName`-je; a korábbi **`HokWebLauncher.exe`** név elavult — ha még létezik a `dist` mappában, töröld a teljes `launcher/dist` könyvtárat, majd fordíts újra.)
+- Build után: `launcher/dist/WebProjectLauncher.exe`
+- A projekt **AssemblyName**-je: `WebProjectLauncher` (a régi `HokWebLauncher.exe` név elavult).
 
 ## Fordítás
-
-Futtasd:
 
 ```bat
 launcher\build-launcher.bat
 ```
 
-Szükséges: .NET SDK 9 (`dotnet --version`).
+Szükséges: **.NET SDK 9** (`dotnet --version`).
 
-## Funkciók
+## Projektprofil: `web-launcher.json` (opcionális, a webprojekt gyökerében)
 
-- **Projekt mappa** tallózás
-- **Host/Port** beállítás
-- **Indítás előtti lépések**:
-  - `npm install`
-  - `npx prisma generate`
-  - `npm run db:migrate`
-  - `npm run db:seed`
-- **Dev szerver indítás** (`npm run dev -- --hostname ... --port ...`)
-- **Leállítás** (`taskkill /PID ... /T /F`)
-- **Automatikus böngészőnyitás**
-- **Progress bar** az indítási folyamatra
-- **Állapotkijelzés** (NEM FUT / INDUL / FUT)
+A launcher a kiválasztott mappában megkeresi a **`web-launcher.json`** fájlt. Ha nincs, alapértelmezett parancsok és kapcsolók érvényesek.
 
-## Konzol és karakterek
+Más projekthez:
 
-A launcher kimenetkezelése UTF-8-ra állított, ezért:
+1. Másold a repo gyökerében lévő **`web-launcher.example.json`** fájlt `web-launcher.json` néven a **célprojekt** gyökerébe (ahol a `package.json` van).
+2. Igazítsd a `steps` objektumban a **parancsokat** (pl. `npm run dev` Vite esetén más flag kellhet).
+3. A **`devCommand`** mezőben a `{host}` és `{port}` helyőrzők behelyettesítődnek.
 
-- a korábban megjelenő „ismeretlen karakterek” csökkennek/megszűnnek,
-- a tipikus Next/Node kimenet olvashatóbb.
+Példa mezők:
 
-Az indított folyamatoknál a launcher `chcp 65001`-et és UTF-8 redirectet használ.
+| Mező | Jelentés |
+|--------|-----------|
+| `displayName` | Csak infó; az abalcím része lehet. |
+| `windowTitle` | Ha megadod, ez lesz az ablak címe. |
+| `devCommand` | Dev szerver parancs sablonja. |
+| `steps` | Kulcs: `npm-ci`, `npm-install`, `prisma-generate`, `db-migrate`, `db-seed`, `lint`, `typecheck`, `test`, `build`, `e2e`. Minden lépéshez: `command`, `defaultOn`. |
 
-## Színes log + témák
+**Prisma** lépések (`prisma-generate`, `db-migrate`, `db-seed`) csak akkor engedélyezhetők a felületen, ha létezik a `prisma/schema.prisma`.
 
-A log panel ANSI színkódokat értelmez, és több téma választható:
+**npm script** lépések (`db-migrate`, `db-seed`, `lint`, …) csak akkor választhatók, ha a `package.json` `scripts` szekciójában megvan a megfelelő név (pl. `lint`).
 
-- PowerShell
-- Dark
-- Light
-- Amber
+## Felület
 
-## Mappaszerkezet (launcher)
+- **Projekt és lépések** fül: mappa, host, port, téma, pipák (telepítés, Prisma, DB, minőség, böngésző, telemetry).
+- **Haladó** fül: **dev parancs** szerkesztése (pl. más framework), visszaállítás gomb.
 
-- `launcher/HokWebLauncher/HokWebLauncher.csproj` - WinForms projekt
-- `launcher/HokWebLauncher/Program.cs` - teljes GUI + process orchestration
-- `launcher/build-launcher.bat` - build helper
-- `launcher/dist/` - elkészült exe
+**npm ci** és **npm install** egyszerre ne legyen bepipálva — a launcher figyelmeztet.
+
+## Tipikus „új gép, teljes kör” sorrend
+
+1. `npm ci` (vagy `npm install`)
+2. Prisma generate (ha van séma)
+3. `db:migrate` + `db:seed` (ha kell tesztadat)
+4. Opcionálisan: `lint` → `typecheck` → `test` → `build` → `test:e2e`
+5. `npm run dev` (a `devCommand` sablon szerint)
+
+Az E2E sok projektnél **saját Playwright `webServer`**-t indít — ebben az esetben a dev szervert nem kell előtte külön elindítani. Ha a teszt konfig nálad másképp van, állítsd a `web-launcher.json` lépéseit.
+
+## Konzol és témák
+
+UTF-8 (`chcp 65001`), ANSI színek a logban, témák: PowerShell, Dark, Light, Amber.
+
+## Mappaszerkezet (forrás)
+
+- `launcher/HokWebLauncher/` — WinForms forrás (`Program.cs`, `.csproj`)
+- `launcher/build-launcher.bat` — `dotnet publish` → `launcher/dist/`
+- Gyökér: `web-launcher.json` (projekt-specifikus), `web-launcher.example.json` (sablon)
+
+A **`launcher/dist`**, **`bin/`**, **`obj/`** build melléktermékek — a `launcher/.gitignore` kizárja őket a gitből.
 
 ## Megjegyzés
 
-Ha build közben „file is locked” warning jön, zárd be a futó launcher példányt, és futtasd újra a buildet.
-
-A **`launcher/dist`**, **`HokWebLauncher/bin`** és **`HokWebLauncher/obj`** könyvtárak **nem** részei a forrásnak: a `launcher/.gitignore` kizárja őket. Régi / részleges buildek takarítása: töröld ezt a három mappát, majd futtasd a `build-launcher.bat`-ot.
+Build közben „file is locked” esetén zárd be a futó launcher példányt, majd fordíts újra.

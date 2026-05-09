@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 namespace WebProjectLauncher;
@@ -14,18 +15,57 @@ internal static class Program
     }
 }
 
+/// <summary>Projekt gyökerében opcionális web-launcher.json — bármely Node/Next (vagy más npm) repóhoz.</summary>
+internal sealed class LauncherJsonFile
+{
+    public int ProfileVersion { get; set; } = 1;
+    public string? DisplayName { get; set; }
+    public string? WindowTitle { get; set; }
+    public string? DevCommand { get; set; }
+    public Dictionary<string, LauncherJsonStep>? Steps { get; set; }
+}
+
+internal sealed class LauncherJsonStep
+{
+    public string? Command { get; set; }
+    public bool? DefaultOn { get; set; }
+}
+
+internal sealed record StepMeta(
+    string Id,
+    string Label,
+    string DefaultCommand,
+    bool DefaultChecked,
+    string[]? NeedFilesRelative,
+    string? PackageJsonScript);
+
 internal sealed class LauncherForm : Form
 {
-    private readonly TextBox _projectPath = new() { Width = 560 };
+    private const string DefaultDevTemplate = "npm run dev -- --hostname {host} --port {port}";
+
+    private static readonly StepMeta[] StepCatalog =
+    [
+        new("npm-ci", "npm ci (tiszta telepites)", "npm ci", false, null, null),
+        new("npm-install", "npm install", "npm install", false, null, null),
+        new("prisma-generate", "Prisma client generate", "npx prisma generate", true, ["prisma/schema.prisma"], null),
+        new("db-migrate", "DB migracio (npm script)", "npm run db:migrate", true, ["prisma/schema.prisma"], "db:migrate"),
+        new("db-seed", "DB seed (npm script)", "npm run db:seed", false, ["prisma/schema.prisma"], "db:seed"),
+        new("lint", "npm run lint", "npm run lint", false, null, "lint"),
+        new("typecheck", "npm run typecheck", "npm run typecheck", false, null, "typecheck"),
+        new("test", "npm run test (unit)", "npm run test", false, null, "test"),
+        new("build", "npm run build (production)", "npm run build", false, null, "build"),
+        new("e2e", "npm run test:e2e (Playwright)", "npm run test:e2e", false, null, "test:e2e"),
+    ];
+
+    private readonly TextBox _projectPath = new() { Width = 520 };
     private readonly TextBox _host = new() { Text = "127.0.0.1", Width = 120 };
     private readonly TextBox _port = new() { Text = "3000", Width = 80 };
-    private readonly ComboBox _themeSelect = new() { Width = 180, DropDownStyle = ComboBoxStyle.DropDownList };
-    private readonly CheckBox _runMigrations = new() { Text = "Migrate inditas elott", Checked = true, AutoSize = true };
-    private readonly CheckBox _runSeed = new() { Text = "Seed inditas elott", Checked = false, AutoSize = true };
-    private readonly CheckBox _openBrowser = new() { Text = "Bongeszo automatikus nyitas", Checked = true, AutoSize = true };
-    private readonly CheckBox _disableTelemetry = new() { Text = "Next telemetry kikapcsolasa", Checked = true, AutoSize = true };
-    private readonly CheckBox _autoInstall = new() { Text = "npm install futtatasa", Checked = false, AutoSize = true };
-    private readonly CheckBox _runPrismaGenerate = new() { Text = "Prisma generate futtatasa", Checked = true, AutoSize = true };
+    private readonly ComboBox _themeSelect = new() { Width = 160, DropDownStyle = ComboBoxStyle.DropDownList };
+    private readonly TextBox _devCommand = new() { Multiline = true, Height = 44, Width = 720, ScrollBars = ScrollBars.Vertical, WordWrap = true };
+    private readonly Label _configHint = new() { AutoSize = true, ForeColor = Color.DimGray, MaximumSize = new Size(720, 0) };
+    private readonly Button _resetDevCmd = new() { Text = "Dev parancs visszaallitasa", AutoSize = true };
+    private readonly Dictionary<string, CheckBox> _stepChecks = new();
+    private readonly Dictionary<string, string> _stepCommands = new();
     private readonly Button _start = new() { Text = "Inditas", Width = 110, Height = 34 };
     private readonly Button _stop = new() { Text = "Leallitas", Width = 110, Height = 34 };
     private readonly Button _clearLog = new() { Text = "Log torles", Width = 110, Height = 34 };
@@ -34,6 +74,8 @@ internal sealed class LauncherForm : Form
     private readonly Label _activeProcess = new() { AutoSize = true, Text = "Futo folyamat: -", Font = new Font("Segoe UI", 9f, FontStyle.Bold) };
     private readonly ProgressBar _progress = new() { Width = 420, Height = 18, Minimum = 0, Maximum = 100, Value = 0, Style = ProgressBarStyle.Continuous };
     private readonly Label _progressLabel = new() { AutoSize = true, Text = "Inditasi folyamat: varakozas" };
+    private readonly CheckBox _openBrowser = new() { Text = "Bongeszo automatikus nyitas", Checked = true, AutoSize = true };
+    private readonly CheckBox _disableTelemetry = new() { Text = "Next telemetry kikapcsolasa (NEXT_TELEMETRY_DISABLED=1)", Checked = true, AutoSize = true };
     private readonly RichTextBox _log = new()
     {
         ReadOnly = true,
@@ -61,93 +103,24 @@ internal sealed class LauncherForm : Form
 
         var rootGuess = GuessProjectRoot();
         _projectPath.Text = rootGuess ?? Environment.CurrentDirectory;
+        _devCommand.Text = DefaultDevTemplate;
 
-        var topWrap = new Panel { Dock = DockStyle.Top, Height = 232, Padding = new Padding(12, 12, 12, 8), BackColor = Color.White };
-        Controls.Add(topWrap);
+        var tabs = new TabControl { Dock = DockStyle.Top, Height = 320, Padding = new Point(8, 8) };
+        var tabProject = new TabPage("Projekt es lepesek");
+        var tabAdvanced = new TabPage("Halado (dev parancs)");
+        tabs.TabPages.Add(tabProject);
+        tabs.TabPages.Add(tabAdvanced);
+        Controls.Add(tabs);
         Controls.Add(_log);
 
-        var title = new Label
+        BuildProjectTab(tabProject);
+        BuildAdvancedTab(tabAdvanced);
+
+        _resetDevCmd.Click += (_, _) =>
         {
-            Text = "Altalanos Web Project Launcher",
-            Font = new Font("Segoe UI", 14, FontStyle.Bold),
-            ForeColor = Color.FromArgb(25, 63, 145),
-            AutoSize = true,
-            Location = new Point(10, 10)
+            _devCommand.Text = MergedDevCommand(_projectPath.Text.Trim()) ?? DefaultDevTemplate;
+            Log("Dev parancs visszaallitva alapertelmezettre / web-launcher.json szerint.");
         };
-        topWrap.Controls.Add(title);
-
-        var pathLbl = new Label { Text = "Projekt mappa:", AutoSize = true, Location = new Point(12, 48) };
-        topWrap.Controls.Add(pathLbl);
-        _projectPath.Location = new Point(110, 44);
-        topWrap.Controls.Add(_projectPath);
-
-        var browse = new Button { Text = "Tallozas...", Width = 92, Height = 28, Location = new Point(680, 42) };
-        browse.Click += (_, _) => BrowseProjectPath();
-        topWrap.Controls.Add(browse);
-
-        var hostLbl = new Label { Text = "Host:", AutoSize = true, Location = new Point(12, 82) };
-        topWrap.Controls.Add(hostLbl);
-        _host.Location = new Point(52, 78);
-        _host.TextChanged += (_, _) => UpdateUrl();
-        topWrap.Controls.Add(_host);
-
-        var portLbl = new Label { Text = "Port:", AutoSize = true, Location = new Point(184, 82) };
-        topWrap.Controls.Add(portLbl);
-        _port.Location = new Point(222, 78);
-        _port.TextChanged += (_, _) => UpdateUrl();
-        topWrap.Controls.Add(_port);
-
-        var themeLbl = new Label { Text = "Tema:", AutoSize = true, Location = new Point(320, 82) };
-        topWrap.Controls.Add(themeLbl);
-        _themeSelect.Location = new Point(368, 78);
-        _themeSelect.Items.AddRange(["PowerShell", "Dark", "Light", "Amber"]);
-        _themeSelect.SelectedIndex = 0;
-        _themeSelect.SelectedIndexChanged += (_, _) => ApplyTheme(ThemeFromName(_themeSelect.SelectedItem?.ToString()));
-        topWrap.Controls.Add(_themeSelect);
-
-        _status.Location = new Point(560, 82);
-        _status.Font = new Font("Segoe UI", 9.5f, FontStyle.Bold);
-        topWrap.Controls.Add(_status);
-
-        _url.Location = new Point(12, 112);
-        _url.Font = new Font("Segoe UI", 9.5f, FontStyle.Italic);
-        topWrap.Controls.Add(_url);
-        _activeProcess.Location = new Point(12, 132);
-        topWrap.Controls.Add(_activeProcess);
-
-        _progress.Location = new Point(12, 156);
-        topWrap.Controls.Add(_progress);
-        _progressLabel.Location = new Point(440, 157);
-        _progressLabel.Font = new Font("Segoe UI", 9f, FontStyle.Regular);
-        topWrap.Controls.Add(_progressLabel);
-
-        var options = new FlowLayoutPanel
-        {
-            Location = new Point(12, 180),
-            Width = 900,
-            Height = 44,
-            FlowDirection = FlowDirection.LeftToRight,
-            WrapContents = true
-        };
-        options.Controls.AddRange([_runMigrations, _runSeed, _openBrowser, _disableTelemetry, _autoInstall, _runPrismaGenerate]);
-        topWrap.Controls.Add(options);
-
-        _start.Location = new Point(950, 42);
-        _stop.Location = new Point(950, 84);
-        _clearLog.Location = new Point(950, 126);
-        _start.BackColor = Color.FromArgb(35, 115, 245);
-        _start.ForeColor = Color.White;
-        _start.FlatStyle = FlatStyle.Flat;
-        _stop.FlatStyle = FlatStyle.Flat;
-        _clearLog.FlatStyle = FlatStyle.Flat;
-        _stop.Enabled = false;
-
-        _start.Click += async (_, _) => await StartServerAsync();
-        _stop.Click += async (_, _) => await StopServerAsync();
-        _clearLog.Click += (_, _) => _log.Clear();
-        topWrap.Controls.Add(_start);
-        topWrap.Controls.Add(_stop);
-        topWrap.Controls.Add(_clearLog);
 
         ApplyTheme(_theme);
 
@@ -161,20 +134,141 @@ internal sealed class LauncherForm : Form
                     e.Cancel = true;
                     return;
                 }
-                if (answer == DialogResult.Yes)
-                {
-                    await StopServerAsync();
-                }
+                if (answer == DialogResult.Yes) await StopServerAsync();
             }
         };
 
-        Log("Launcher keszen all. Valassz projektet, majd kattints az Inditas gombra.");
+        ReloadProjectConfig();
+        Log("Web Project Launcher — barmely npm-alapu webprojekthez. Allitsd be a mappat, a lepeseket, majd Inditas.");
+    }
+
+    private void BuildProjectTab(TabPage tab)
+    {
+        tab.Padding = new Padding(10);
+        var title = new Label
+        {
+            Text = "Altalanos npm / Next.js (vagy mas) fejlesztoi indito",
+            Font = new Font("Segoe UI", 12, FontStyle.Bold),
+            ForeColor = Color.FromArgb(25, 63, 145),
+            AutoSize = true,
+            Location = new Point(8, 8)
+        };
+        tab.Controls.Add(title);
+
+        var pathLbl = new Label { Text = "Projekt mappa (package.json):", AutoSize = true, Location = new Point(8, 40) };
+        tab.Controls.Add(pathLbl);
+        _projectPath.Location = new Point(8, 60);
+        tab.Controls.Add(_projectPath);
+
+        var browse = new Button { Text = "Tallozas...", Width = 92, Height = 28, Location = new Point(540, 56) };
+        browse.Click += (_, _) =>
+        {
+            BrowseProjectPath();
+            ReloadProjectConfig();
+        };
+        tab.Controls.Add(browse);
+        var reloadCfg = new Button { Text = "Profil betoltese", Width = 120, Height = 28, Location = new Point(640, 56) };
+        reloadCfg.Click += (_, _) => ReloadProjectConfig();
+        tab.Controls.Add(reloadCfg);
+
+        var hostLbl = new Label { Text = "Host:", AutoSize = true, Location = new Point(8, 96) };
+        tab.Controls.Add(hostLbl);
+        _host.Location = new Point(52, 92);
+        _host.TextChanged += (_, _) => UpdateUrl();
+        tab.Controls.Add(_host);
+
+        var portLbl = new Label { Text = "Port:", AutoSize = true, Location = new Point(184, 96) };
+        tab.Controls.Add(portLbl);
+        _port.Location = new Point(222, 92);
+        _port.TextChanged += (_, _) => UpdateUrl();
+        tab.Controls.Add(_port);
+
+        var themeLbl = new Label { Text = "Tema:", AutoSize = true, Location = new Point(320, 96) };
+        tab.Controls.Add(themeLbl);
+        _themeSelect.Location = new Point(368, 92);
+        _themeSelect.Items.AddRange(["PowerShell", "Dark", "Light", "Amber"]);
+        _themeSelect.SelectedIndex = 0;
+        _themeSelect.SelectedIndexChanged += (_, _) => ApplyTheme(ThemeFromName(_themeSelect.SelectedItem?.ToString()));
+        tab.Controls.Add(_themeSelect);
+
+        _status.Location = new Point(560, 96);
+        _status.Font = new Font("Segoe UI", 9.5f, FontStyle.Bold);
+        tab.Controls.Add(_status);
+
+        _url.Location = new Point(8, 124);
+        _url.Font = new Font("Segoe UI", 9.5f, FontStyle.Italic);
+        tab.Controls.Add(_url);
+        _activeProcess.Location = new Point(8, 144);
+        tab.Controls.Add(_activeProcess);
+
+        _progress.Location = new Point(8, 168);
+        tab.Controls.Add(_progress);
+        _progressLabel.Location = new Point(440, 169);
+        tab.Controls.Add(_progressLabel);
+
+        _configHint.Location = new Point(8, 192);
+        tab.Controls.Add(_configHint);
+
+        var flow = new FlowLayoutPanel
+        {
+            Location = new Point(8, 218),
+            Width = 900,
+            Height = 88,
+            FlowDirection = FlowDirection.LeftToRight,
+            WrapContents = true,
+            AutoScroll = true
+        };
+        flow.Controls.Add(_openBrowser);
+        flow.Controls.Add(_disableTelemetry);
+        foreach (var meta in StepCatalog)
+        {
+            var cb = new CheckBox { Text = meta.Label, AutoSize = true, Tag = meta.Id };
+            _stepChecks[meta.Id] = cb;
+            _stepCommands[meta.Id] = meta.DefaultCommand;
+            flow.Controls.Add(cb);
+        }
+        tab.Controls.Add(flow);
+
+        _start.Location = new Point(950, 56);
+        _stop.Location = new Point(950, 98);
+        _clearLog.Location = new Point(950, 140);
+        _start.BackColor = Color.FromArgb(35, 115, 245);
+        _start.ForeColor = Color.White;
+        _start.FlatStyle = FlatStyle.Flat;
+        _stop.FlatStyle = FlatStyle.Flat;
+        _clearLog.FlatStyle = FlatStyle.Flat;
+        _stop.Enabled = false;
+        _start.Click += async (_, _) => await StartServerAsync();
+        _stop.Click += async (_, _) => await StopServerAsync();
+        _clearLog.Click += (_, _) => _log.Clear();
+        tab.Controls.Add(_start);
+        tab.Controls.Add(_stop);
+        tab.Controls.Add(_clearLog);
+
+        UpdateUrl();
+    }
+
+    private void BuildAdvancedTab(TabPage tab)
+    {
+        tab.Padding = new Padding(10);
+        var help = new Label
+        {
+            Location = new Point(8, 12),
+            MaximumSize = new Size(900, 0),
+            AutoSize = true,
+            Text = "A {host} es {port} helyorzok behelyettesitodnek. Mas keretrendszerhez (pl. Vite) ird at a parancsot, pl.: npm run dev -- --host {host} --port {port}"
+        };
+        tab.Controls.Add(help);
+        _devCommand.Location = new Point(8, 56);
+        tab.Controls.Add(_devCommand);
+        _resetDevCmd.Location = new Point(8, 108);
+        tab.Controls.Add(_resetDevCmd);
     }
 
     private static string? GuessProjectRoot()
     {
         var d = AppContext.BaseDirectory;
-        for (var i = 0; i < 8; i++)
+        for (var i = 0; i < 10; i++)
         {
             if (File.Exists(Path.Combine(d, "package.json"))) return d;
             var parent = Directory.GetParent(d);
@@ -184,11 +278,93 @@ internal sealed class LauncherForm : Form
         return null;
     }
 
+    private static LauncherJsonFile? LoadLauncherJson(string projectDir)
+    {
+        var path = Path.Combine(projectDir, "web-launcher.json");
+        if (!File.Exists(path)) return null;
+        try
+        {
+            var json = File.ReadAllText(path);
+            return JsonSerializer.Deserialize<LauncherJsonFile>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static string? MergedDevCommand(string projectDir)
+    {
+        var j = LoadLauncherJson(projectDir);
+        if (string.IsNullOrWhiteSpace(j?.DevCommand)) return null;
+        return j.DevCommand.Trim();
+    }
+
+    private void ReloadProjectConfig()
+    {
+        var dir = _projectPath.Text.Trim();
+        if (!Directory.Exists(dir) || !File.Exists(Path.Combine(dir, "package.json")))
+        {
+            _configHint.Text = "Adj meg egy letezo mappat, ahol van package.json.";
+            return;
+        }
+
+        var json = LoadLauncherJson(dir);
+        Text = string.IsNullOrWhiteSpace(json?.WindowTitle)
+            ? (string.IsNullOrWhiteSpace(json?.DisplayName) ? "Web Project Launcher" : $"Launcher — {json.DisplayName}")
+            : json!.WindowTitle!;
+
+        _devCommand.Text = MergedDevCommand(dir) ?? DefaultDevTemplate;
+
+        foreach (var meta in StepCatalog)
+        {
+            var cmd = meta.DefaultCommand;
+            var on = meta.DefaultChecked;
+            if (json?.Steps is not null && json.Steps.TryGetValue(meta.Id, out var step))
+            {
+                if (!string.IsNullOrWhiteSpace(step.Command)) cmd = step.Command!.Trim();
+                if (step.DefaultOn.HasValue) on = step.DefaultOn.Value;
+            }
+            _stepCommands[meta.Id] = cmd;
+            if (_stepChecks.TryGetValue(meta.Id, out var cb))
+            {
+                cb.Checked = on;
+                var need = meta.NeedFilesRelative is not null && !meta.NeedFilesRelative.All(f => File.Exists(Path.Combine(dir, f)));
+                var scriptMissing = meta.PackageJsonScript is not null && !PackageJsonHasScript(dir, meta.PackageJsonScript);
+                if (need || scriptMissing)
+                {
+                    cb.Enabled = false;
+                    cb.Checked = false;
+                }
+                else cb.Enabled = true;
+            }
+        }
+
+        _configHint.Text = File.Exists(Path.Combine(dir, "web-launcher.json"))
+            ? "Profil: web-launcher.json betoltve."
+            : "Nincs web-launcher.json — alapertelmezett lepesek. Masik projekthez masold a web-launcher.example.json fajlt web-launcher.json neven.";
+    }
+
+    private static bool PackageJsonHasScript(string projectDir, string scriptName)
+    {
+        var path = Path.Combine(projectDir, "package.json");
+        if (!File.Exists(path)) return false;
+        try
+        {
+            using var doc = JsonDocument.Parse(File.ReadAllText(path));
+            return doc.RootElement.TryGetProperty("scripts", out var scripts) && scripts.TryGetProperty(scriptName, out _);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     private void BrowseProjectPath()
     {
         using var dlg = new FolderBrowserDialog
         {
-            Description = "Valaszd ki a webprojekt gyokermappajat",
+            Description = "Valaszd ki a webprojekt gyokermappajat (ahol a package.json van)",
             SelectedPath = Directory.Exists(_projectPath.Text) ? _projectPath.Text : Environment.CurrentDirectory
         };
         if (dlg.ShowDialog() == DialogResult.OK) _projectPath.Text = dlg.SelectedPath;
@@ -202,10 +378,7 @@ internal sealed class LauncherForm : Form
         _stop.Enabled = running || _starting;
         _status.Text = running ? "Allapot: FUT" : (_starting ? "Allapot: INDUL..." : "Allapot: NEM FUT");
         _status.ForeColor = running ? _theme.SuccessColor : (_starting ? _theme.WarningColor : _theme.ErrorColor);
-        if (!running && !_starting)
-        {
-            SetActiveProcess("-");
-        }
+        if (!running && !_starting) SetActiveProcess("-");
     }
 
     private void BeginProgress(int totalSteps)
@@ -283,11 +456,7 @@ internal sealed class LauncherForm : Form
         var last = 0;
         foreach (Match m in _ansiRegex.Matches(text))
         {
-            if (m.Index > last)
-            {
-                AppendSegment(text[last..m.Index], currentColor);
-            }
-
+            if (m.Index > last) AppendSegment(text[last..m.Index], currentColor);
             var codes = m.Groups["code"].Value.Split(';', StringSplitOptions.RemoveEmptyEntries);
             foreach (var c in codes)
             {
@@ -329,6 +498,11 @@ internal sealed class LauncherForm : Form
             MessageBox.Show("A port szama ervenytelen.", "Hiba", MessageBoxButtons.OK, MessageBoxIcon.Error);
             return false;
         }
+        if (string.IsNullOrWhiteSpace(_devCommand.Text))
+        {
+            MessageBox.Show("A dev parancs sablon ures.", "Hiba", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return false;
+        }
         return true;
     }
 
@@ -344,17 +518,12 @@ internal sealed class LauncherForm : Form
             StandardOutputEncoding = new UTF8Encoding(false),
             StandardErrorEncoding = new UTF8Encoding(false)
         };
-
         psi.Environment["FORCE_COLOR"] = "1";
         psi.Environment["CLICOLOR_FORCE"] = "1";
         psi.Environment["TERM"] = "xterm-256color";
-
         if (env is not null)
         {
-            foreach (var kv in env)
-            {
-                psi.Environment[kv.Key] = kv.Value;
-            }
+            foreach (var kv in env) psi.Environment[kv.Key] = kv.Value;
         }
         return psi;
     }
@@ -383,71 +552,91 @@ internal sealed class LauncherForm : Form
         }
         if (!ValidateSettings(out var projectDir)) return;
 
+        if (_stepChecks.GetValueOrDefault("npm-ci")?.Checked == true && _stepChecks.GetValueOrDefault("npm-install")?.Checked == true)
+        {
+            MessageBox.Show("Valaszd ki vagy az npm ci-t, vagy az npm install-t — ne mindkettot egyszerre.", "Figyelem", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
         _starting = true;
         SetUiRunning(false);
         Log("=== Inditas kezdete ===");
         Log($"Projekt: {projectDir}");
-        var totalSteps = 1 + (_autoInstall.Checked ? 1 : 0) + (_runPrismaGenerate.Checked ? 1 : 0) + (_runMigrations.Checked ? 1 : 0) + (_runSeed.Checked ? 1 : 0) + 1;
-        BeginProgress(totalSteps);
+
+        var pipeline = new List<(string name, string cmd)>();
+        pipeline.Add(("npm ellenorzes", "where npm"));
+        foreach (var meta in StepCatalog)
+        {
+            if (!_stepChecks.TryGetValue(meta.Id, out var cb) || !cb.Checked) continue;
+            if (meta.NeedFilesRelative is not null && !meta.NeedFilesRelative.All(f => File.Exists(Path.Combine(projectDir, f))))
+            {
+                Log($"Kihagyva (hianyzo fajlok): {meta.Label}");
+                continue;
+            }
+            if (meta.PackageJsonScript is not null && !PackageJsonHasScript(projectDir, meta.PackageJsonScript))
+            {
+                Log($"Kihagyva (nincs npm script: {meta.PackageJsonScript}): {meta.Label}");
+                continue;
+            }
+            var cmd = _stepCommands.GetValueOrDefault(meta.Id, meta.DefaultCommand);
+            if (string.IsNullOrWhiteSpace(cmd)) continue;
+            pipeline.Add((meta.Label, cmd));
+        }
+
+        var devTemplate = _devCommand.Text.Trim().Replace("{host}", _host.Text.Trim(), StringComparison.OrdinalIgnoreCase)
+            .Replace("{port}", _port.Text.Trim(), StringComparison.OrdinalIgnoreCase);
+        pipeline.Add(("dev szerver", devTemplate));
+
+        BeginProgress(pipeline.Count);
 
         try
         {
-            Log("[1/4] npm ellenorzes...");
-            if (await RunCommandAsync(projectDir, "where npm", "where npm (ellenorzes)") != 0) { Log("HIBA: npm nem talalhato."); FinishProgress(false); return; }
-            AdvanceProgress("npm ellenorzes");
-
-            if (_autoInstall.Checked)
+            for (var i = 0; i < pipeline.Count; i++)
             {
-                Log("[2/4] npm install...");
-                if (await RunCommandAsync(projectDir, "npm install", "npm install") != 0) { FinishProgress(false); return; }
-                AdvanceProgress("npm install");
+                var (name, cmd) = pipeline[i];
+                Log($"[{i + 1}/{pipeline.Count}] {name}: {cmd}");
+                if (i == 0)
+                {
+                    if (await RunCommandAsync(projectDir, cmd, name) != 0)
+                    {
+                        Log("HIBA: npm nem talalhato a PATH-on.");
+                        FinishProgress(false);
+                        return;
+                    }
+                }
+                else if (i < pipeline.Count - 1)
+                {
+                    if (await RunCommandAsync(projectDir, cmd, name) != 0)
+                    {
+                        Log($"HIBA: lepes sikertelen: {name}");
+                        FinishProgress(false);
+                        return;
+                    }
+                }
+                else
+                {
+                    var envVars = new Dictionary<string, string>();
+                    if (_disableTelemetry.Checked) envVars["NEXT_TELEMETRY_DISABLED"] = "1";
+                    var psi = BuildCommandPsi(projectDir, cmd, envVars);
+                    _serverProcess = new Process { StartInfo = psi, EnableRaisingEvents = true };
+                    _serverProcess.OutputDataReceived += (_, e) => { if (!string.IsNullOrWhiteSpace(e.Data)) Log(e.Data); };
+                    _serverProcess.ErrorDataReceived += (_, e) => { if (!string.IsNullOrWhiteSpace(e.Data)) Log("[ERR] " + e.Data); };
+                    _serverProcess.Exited += (_, _) => { Log("A dev szerver folyamat leallt."); SetUiRunning(false); };
+                    _serverProcess.Start();
+                    _serverProcess.BeginOutputReadLine();
+                    _serverProcess.BeginErrorReadLine();
+                    SetUiRunning(true);
+                    SetActiveProcess(name);
+                    Log($"Sikeres inditas. PID: {_serverProcess.Id}");
+                    Log($"Bongeszo: http://{_host.Text.Trim()}:{_port.Text.Trim()}");
+                    if (_openBrowser.Checked)
+                    {
+                        Process.Start(new ProcessStartInfo { FileName = $"http://{_host.Text.Trim()}:{_port.Text.Trim()}", UseShellExecute = true });
+                    }
+                }
+                AdvanceProgress(name);
             }
-
-            if (_runPrismaGenerate.Checked)
-            {
-                Log("[3/4] npx prisma generate...");
-                if (await RunCommandAsync(projectDir, "npx prisma generate", "npx prisma generate") != 0) { FinishProgress(false); return; }
-                AdvanceProgress("prisma generate");
-            }
-
-            if (_runMigrations.Checked)
-            {
-                Log("[4/4] npm run db:migrate...");
-                if (await RunCommandAsync(projectDir, "npm run db:migrate", "npm run db:migrate") != 0) { FinishProgress(false); return; }
-                AdvanceProgress("db migrate");
-            }
-
-            if (_runSeed.Checked)
-            {
-                Log("Seed futtatasa: npm run db:seed...");
-                if (await RunCommandAsync(projectDir, "npm run db:seed", "npm run db:seed") != 0) { FinishProgress(false); return; }
-                AdvanceProgress("db seed");
-            }
-
-            var envVars = new Dictionary<string, string>();
-            if (_disableTelemetry.Checked) envVars["NEXT_TELEMETRY_DISABLED"] = "1";
-
-            var cmd = $"npm run dev -- --hostname {_host.Text.Trim()} --port {_port.Text.Trim()}";
-            var psi = BuildCommandPsi(projectDir, cmd, envVars);
-            _serverProcess = new Process { StartInfo = psi, EnableRaisingEvents = true };
-            _serverProcess.OutputDataReceived += (_, e) => { if (!string.IsNullOrWhiteSpace(e.Data)) Log(e.Data); };
-            _serverProcess.ErrorDataReceived += (_, e) => { if (!string.IsNullOrWhiteSpace(e.Data)) Log("[ERR] " + e.Data); };
-            _serverProcess.Exited += (_, _) => { Log("A webszerver leallt."); SetUiRunning(false); };
-            _serverProcess.Start();
-            _serverProcess.BeginOutputReadLine();
-            _serverProcess.BeginErrorReadLine();
-
-            SetUiRunning(true);
-            SetActiveProcess($"npm run dev ({_host.Text.Trim()}:{_port.Text.Trim()})");
-            AdvanceProgress("dev szerver inditas");
             FinishProgress(true);
-            Log($"Sikeres inditas. PID: {_serverProcess.Id}");
-            Log($"Lokal cim: http://{_host.Text.Trim()}:{_port.Text.Trim()}");
-
-            if (_openBrowser.Checked)
-            {
-                Process.Start(new ProcessStartInfo { FileName = $"http://{_host.Text.Trim()}:{_port.Text.Trim()}", UseShellExecute = true });
-            }
         }
         finally
         {
@@ -457,10 +646,7 @@ internal sealed class LauncherForm : Form
                 SetUiRunning(false);
                 if (_progress.Value > 0 && _progress.Value < 100) FinishProgress(false);
             }
-            else
-            {
-                SetUiRunning(true);
-            }
+            else SetUiRunning(true);
         }
     }
 
@@ -469,10 +655,9 @@ internal sealed class LauncherForm : Form
         if (_serverProcess is null || _serverProcess.HasExited)
         {
             SetUiRunning(false);
-            Log("Nincs futo webszerver.");
+            Log("Nincs futo dev szerver.");
             return;
         }
-
         try
         {
             Log($"Leallitas PID {_serverProcess.Id}...");

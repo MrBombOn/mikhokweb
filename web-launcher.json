@@ -1,0 +1,17 @@
+{
+  "profileVersion": 1,
+  "displayName": "PTE MIK HÖK Web",
+  "devCommand": "npm run dev -- --hostname {host} --port {port}",
+  "steps": {
+    "npm-ci": { "command": "npm ci", "defaultOn": false },
+    "npm-install": { "command": "npm install", "defaultOn": false },
+    "prisma-generate": { "command": "npm run db:generate", "defaultOn": true },
+    "db-migrate": { "command": "npm run db:migrate", "defaultOn": true },
+    "db-seed": { "command": "npm run db:seed", "defaultOn": true },
+    "lint": { "command": "npm run lint", "defaultOn": false },
+    "typecheck": { "command": "npm run typecheck", "defaultOn": false },
+    "test": { "command": "npm run test", "defaultOn": false },
+    "build": { "command": "npm run build", "defaultOn": false },
+    "e2e": { "command": "npm run test:e2e", "defaultOn": false }
+  }
+}
