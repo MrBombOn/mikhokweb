@@ -40,7 +40,8 @@
     "ops:rebuild-search-index": "npx tsx scripts/ops/rebuild-search-index.ts",
     "ops:s3-upload-inventory": "npx tsx scripts/ops/s3-upload-inventory.ts",
     "ops:audit-report": "node scripts/ops/npm-audit-report.cjs",
-    "ops:sbom": "node scripts/ops/npm-sbom.cjs"
+    "ops:sbom": "node scripts/ops/npm-sbom.cjs",
+    "docs:pdf": "node scripts/docs/build-all-pdfs.mjs"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
@@ -70,6 +71,7 @@
     "@types/react-dom": "^19.1.2",
     "eslint": "^9.25.1",
     "eslint-config-next": "15.5.15",
+    "md-to-pdf": "^5.2.5",
     "prisma": "^6.19.0",
     "tsx": "^4.21.0",
     "typescript": "^5.8.3"

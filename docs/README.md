@@ -2,7 +2,12 @@
 
 Ez a mappa a **projekt SSOT szöveges** leírásait tartalmazza (spec, architektúra, üzemeltetés, biztonság, modulok).
 
-## Kezdés három lépésben
+## Magyar nyelvű teljes térkép
+
+- **[Teljes magyar tartalomjegyzék (címek + leírások + linkek)](./TARTALOMJEGYZEK-MAGYAR.md)** — tagolt fejezetek, modulok, biztonság, üzemeltetés, PDF export útmutató.
+- **PDF minden dokumentumhoz:** `npm run docs:pdf` → részletek: [`export/README.md`](./export/README.md)
+
+## Kezdés három lépésben (angol fájlnevek)
 
 1. **Mappa- és kódréteg-felépítés:** [`folder-structure.md`](./folder-structure.md) (mit hova tegyünk: `app/`, `features/`, `components/`, `lib/`).
 2. **Teljes doc-tartalomjegyzék:** [`documentation-index.md`](./documentation-index.md) (minden aktív `.md` linkelve, témakör szerint).

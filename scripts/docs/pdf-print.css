@@ -1,0 +1,31 @@
+/* md-to-pdf: olvasható nyomtatás / PDF */
+body {
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  font-size: 11pt;
+  line-height: 1.45;
+  color: #0f172a;
+}
+pre,
+code {
+  font-size: 9.5pt;
+}
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+th,
+td {
+  border: 1px solid #cbd5e1;
+  padding: 6px 8px;
+  vertical-align: top;
+}
+h1 {
+  font-size: 18pt;
+}
+h2 {
+  font-size: 14pt;
+  margin-top: 1.2em;
+}
+h3 {
+  font-size: 12pt;
+}

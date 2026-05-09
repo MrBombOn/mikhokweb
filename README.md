@@ -8,7 +8,7 @@ A forráskód és a CI a következő repóban van (itt történik a verziókezel
 
 ## Útmutató a fejlesztéshez
 
-- **Dokumentáció hub (itt kezdd):** [docs/README.md](./docs/README.md)
+- **Dokumentáció hub (itt kezdd):** [docs/README.md](./docs/README.md) · [teljes magyar tartalomjegyzék + PDF útmutató](./docs/TARTALOMJEGYZEK-MAGYAR.md)
 - **Git / klónozás (rövid):** [docs/repository.md](./docs/repository.md)
 - **Kanonikus spec (docs belépési pont):** [docs/specification.md](./docs/specification.md)
 - **Projekt workflow (docs belépési pont):** [docs/project-workflow.md](./docs/project-workflow.md) · [teljes workflow / krónika](./docs/DOCUMENTATION_PROJECT_WORKFLOW.md)

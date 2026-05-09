@@ -2,6 +2,8 @@
 
 **Gyors belépés:** [`docs/README.md`](./README.md) (strukturált hub + táblázat).
 
+**Magyar tartalomjegyzék és leírások:** [`TARTALOMJEGYZEK-MAGYAR.md`](./TARTALOMJEGYZEK-MAGYAR.md) · PDF: `npm run docs:pdf` → [`export/README.md`](./export/README.md)
+
 Ez a fájl a projekt összes elsődleges dokumentációjának gyűjtőpontja.
 
 ## Alapdokumentumok

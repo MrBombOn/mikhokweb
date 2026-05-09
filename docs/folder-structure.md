@@ -16,7 +16,7 @@ Ez a fájl a **tényleges** repository-elrendezés és a fejlesztői konvenciók
 | `prisma/` | Séma, migrációk, seed. |
 | `public/` | Statikus assetek (`brand/`, …). |
 | `tests/` | Node tesztfuttatás (`npm run test`). |
-| `docs/` | Spec, architektúra, naplók, auditok. **Belépés:** [`docs/README.md`](./README.md); vázlat checklistek: [`docs/checklists/`](./checklists/). |
+| `docs/` | Spec, architektúra, naplók, auditok. **Belépés:** [`README.md`](./README.md); **magyar térkép:** [`TARTALOMJEGYZEK-MAGYAR.md`](./TARTALOMJEGYZEK-MAGYAR.md); vázlatok: [`checklists/`](./checklists/); **PDF export** (generált, nem a gitben): [`export/README.md`](./export/README.md). |
 | `scripts/` | Segéd batch / dev scriptek; `prisma-env.cjs` — Prisma CLI előtt `.env` + `.env.local` betöltése. |
 | `design-pack/`, `logopack/` | Design források (export a `public/brand` felé). |
 | `content/` | *Nincs a repóban* — tartalom SSOT: Prisma + `app/api/*`; régi üres mappa eltávolítva. |

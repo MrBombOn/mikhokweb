@@ -45,3 +45,6 @@ prisma/*.db-journal
 
 # Ops drill artefaktok (backup másolatok, pg_dump)
 .ops/
+
+# Dokumentáció PDF export (`npm run docs:pdf`) — bináris, nagy méret
+docs/export/pdf/
