@@ -1,3 +1,8 @@
+# Fordítás kimenete és MSBuild melléktermékek — soha ne kerüljenek a repóba
 dist/
 **/bin/
 **/obj/
+
+# Visual Studio / felhasználói beállítások
+*.user
+*.suo

@@ -14,7 +14,7 @@ Altalanos, Windows-os GUI launcher barmilyen Node/Next webprojekthez.
 
 ## Hol van az exe?
 
-- Build után: `launcher/dist/WebProjectLauncher.exe`
+- Build után: `launcher/dist/WebProjectLauncher.exe` (a projekt `AssemblyName`-je; a korábbi **`HokWebLauncher.exe`** név elavult — ha még létezik a `dist` mappában, töröld a teljes `launcher/dist` könyvtárat, majd fordíts újra.)
 
 ## Fordítás
 
@@ -69,3 +69,5 @@ A log panel ANSI színkódokat értelmez, és több téma választható:
 ## Megjegyzés
 
 Ha build közben „file is locked” warning jön, zárd be a futó launcher példányt, és futtasd újra a buildet.
+
+A **`launcher/dist`**, **`HokWebLauncher/bin`** és **`HokWebLauncher/obj`** könyvtárak **nem** részei a forrásnak: a `launcher/.gitignore` kizárja őket. Régi / részleges buildek takarítása: töröld ezt a három mappát, majd futtasd a `build-launcher.bat`-ot.
